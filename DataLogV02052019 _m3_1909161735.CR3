@@ -1,0 +1,314 @@
+'DataLogV02052019 _m3_1909161735.CR3
+'Test program to see if timer control on polling helps prevent missing data from LI-7700 and skipped scans on the CR3000.
+'{
+
+
+'\1909161735 modification 3 (markw@campbellsci.com):
+'The Timer1_mSec variable will indicate time it takes for new data to come from the LI-7700 after sending the polling command.
+'Included setup of the Timer1_mSec variable to be stored in the TS data table to use as a diagnostic.
+'/
+
+
+'CRBasic program for polled data collection.
+'CR3000 Series Datalogger
+'Site: Solvay Wetland
+'date: 2019 Febuary 5
+
+'----------------------------------------------------------------
+'Instruments on tower :
+'----------------------------------------------------------------
+'1.  LI-7500 - CO2 and H2O IRGA
+'2.  LI-7700 - Methane analyzer (Power Supply in the other box 24V) at 15.26 meter
+'3. RF450 - Radio Transmiter in supply box 
+'4. CSAT3B - Sonic Anemometer
+
+'----------------------------------------------------------------
+'*** Wiring Diagram ***
+'----------------------------------------------------------------
+
+' CR3000 Power Supply
+'POS BAR +12VDC	CR3000 power 12VDC (red)
+'NEG BAR -12VDC CR3000 Gnd (black)
+'Groung Lug - 
+
+'RS-232 - CONTROL PORTS when connecting Directly with a Laptop (data cable)
+
+'1. LI7500 - SDM INPUT - SDM Address is set to 7
+'SDM-C1	LI-7500 SDM Data (blue) c1
+'SDM-C2	LI-7500 SDM Clock (white) c2
+'SDM-C3	LI-7500 SDM Enable (brown) c3
+'G	    LI-7500 SDM reference (black)
+'LI-7500 SDM shield (white)
+'Power Supplay - (Yellow Cable)
+'POS BAR 12V	LI-7500 power (red with white)
+'NEG BAR 12V	LI-7500 power reference (red with black)
+'6gnd 		    LI-7500 ground (green)
+
+'2. LI7700 - Ethernet INPUT
+'Plugs into NL115 On the Datalogger
+'Power Supply -  At the other box 24V
+'POS BAR 24V	LI-7700 power (red)
+'NEG BAR 24V	LI-7700 power (black)
+
+'3. RF Radio Transmiter
+'CS I/O
+'Power Supply
+'POS BAR 12V	RF450 power (red)
+'NEG BAR 12V 	RF450 power (black)
+
+'4. CSAT3B - SDM INPUT - SDM Address is set to 3
+'SDM-C1	CSAT3B SDM Data (white)
+'SDM-C2	CSAT3B SDM Clock (yellow)
+'SDM-C3	CSAT3B SDM GRD (blue)
+'G BAR	  CSAT3B SDM digital Gnd (black)
+'G BAR    CSAT3B SDM shield (clear)
+'Power Supply
+'POS BAR +12VDC	CSATB power 12-24VDC (red)
+'NEG BAR -12VDC CSATB Gnd (black)
+'7gnd		        CSAT3B  (clear)
+
+'*** END Wiring Diagram ***
+'--------------------------------------------------------------
+'Define Constants, Variables, and Aliases  
+'--------------------------------------------------------------
+
+SequentialMode
+
+Const Scan_Interval = 100			            'Scan interval in mSec for CSAT LI7500 & LI7700
+Const CSAT_OPT = INT (1000/Scan_Interval)	'Compute CSAT3B Execution Parameter 10 Hz.
+Const Output_Interval_Met = 1		  	      'Output interval for met data in minutes.
+Const OFFSET = 16				                  'An offset delay that will be introduced to the CSAT3 and LI-7500 data.
+Const DELAY_IRGA = INT (300/Scan_Interval)'Fixed inherent lag of the LI-7500 data (three scans at 10 Hz).
+
+'Determine scan buffer size, CSAT3B Execution Parameters and fixed lags for CSAT3 and LI-7500.
+Const SCAN_BUFFER_SIZE = 60*INT (1000/Scan_Interval)	'Compute a 60 second scan buffer.
+Const IRGA_REC_BCK = OFFSET-DELAY_IRGA			'Number of records back to align LI-7500 data.
+
+
+'LI-7700
+
+
+'\From MarkW mods
+	Public nBytes_LI7700 As Long
+	Dim    New7700Data_Flag As Boolean
+	Public Timer1_mSec
+'/
+
+
+Const Output_Interval_LI7700 = 30 'Diagnostic data table output interval.
+Const Buffer_Size_LI7700 = 527
+Const NBE_LI7700 = 237                   'Number of bytes expected
+
+'Dim in_bytes_str As String * NMBR_BYTES_TO_SAVE
+'Public nmbr_bytes_rtrnd
+
+'1. LI-7500 Data (SDM_1).
+Public LI7500(4)
+Alias LI7500(1) = LI7500_CO2
+Alias LI7500(2) = LI7500_H2O
+Alias LI7500(3) = press_LI7500
+Alias LI7500(4) = diag_LI7500
+Units LI7500_CO2 = mmol/m^3
+Units LI7500_H2O = mmol/m^3
+Units press_LI7500 = kPa
+Units diag_LI7500 = unitless--
+
+'2. LI-7700 Data
+
+Public LI7700_time(3) As Long
+Public LI7700(22)
+Public LI7700diag_bits(16) As Boolean
+Public tcpip_socket_status As Long
+Alias LI7700_time(1) = milliseconds
+Alias LI7700_time(2) = seconds
+Alias LI7700_time(3) = nanoseconds
+Alias LI7700(4) = LI7700Diag          '14 -214000
+Alias LI7700(5) = LI7700_CH4_dens
+Alias LI7700(6) = LI7700_CH4_mol_frac
+Alias LI7700(7) = LI7700_Temp
+Alias LI7700(8) = LI7700_Press
+Alias LI7700(9) = RSSI
+Alias LI7700(10) = Drop_rate
+Alias LI7700(22) = LI7700_chksum
+
+Alias LI7700diag_bits(5) = motor_failure
+Alias LI7700diag_bits(6) = calibrating
+Alias LI7700diag_bits(7) = bottom_heater_on
+Alias LI7700diag_bits(8) = top_heater_on
+Alias LI7700diag_bits(9) = pump_on
+Alias LI7700diag_bits(10) = motor_spinning
+Alias LI7700diag_bits(11) = block_tmpr_unregulated
+Alias LI7700diag_bits(12) = laser_tmpr_unregulated
+Alias LI7700diag_bits(13) = bad_tmpr
+Alias LI7700diag_bits(14) = ref_unlocked
+Alias LI7700diag_bits(15) = no_signal
+Alias LI7700diag_bits(16) = not_ready
+
+Units milliseconds = ms
+Units seconds = s
+Units nanoseconds = ns
+Units LI7700_CH4_dens = mmol/m^3
+Units LI7700_CH4_mol_frac = umol/mol
+Units LI7700_Temp = Deg C
+Units LI7700_Press = kPa
+Units RSSI = %
+Units Drop_rate = %
+
+Dim socket As Long
+Dim DATA_string As String * NBE_LI7700
+Dim NBR As Long   'Number of bytes returned in DATA_string
+Dim checksum_datalogger
+Dim checksum_flag As Boolean
+'Dim diag_work As Long
+'Dim n
+
+'3. CSAT3B Data (SDM = 3)
+Const SDM_ADDR = 3
+
+Public csat_data(5)
+Alias csat_data(1) = UxCSAT_l
+Alias csat_data(2) = UyCSAT_l
+Alias csat_data(3) = UzCSAT_l
+Alias csat_data(4) = TsCSAT_l 'Ts = sonTemp
+Alias csat_data(5) = diag_CSAT_l
+Units UxCSAT_l = m/s
+Units UyCSAT_l = m/s
+Units UzCSAT_l = m/s
+Units TsCSAT_l = Deg C
+Units diag_CSAT_l = unitless
+
+
+'House (Datalogger) Data.
+Public panel_temp
+Public batt_volt
+Units panel_temp = Deg C
+Units batt_volt = V
+
+
+'--------------------------------------------------------
+'* Define Data Tables
+'--------------------------------------------------------
+
+'Time series data table CSAT3B, LI-7500 & LI-7700 (TS)
+DataTable (ts_data,TRUE,-1)
+
+  DataInterval (0,Scan_Interval,mSec,0)' Changed Lapses from 100 to 0 03/14/2011
+
+  CardOut(0,-1)
+
+  Sample (5,csat_data(1),IEEE4)            'CSAT3B - Lower sonic
+  Sample (4,LI7500_CO2,IEEE4)          'LI-7500
+  Sample (1,LI7700Diag,Long)           'LI-7700
+  Sample (1,LI7700_CH4_dens,IEEE4)     'LI-7700
+  Sample (2,LI7700_Press,IEEE4)        'LI-7700
+  Sample (1,checksum_datalogger,IEEE4) 'CR3000
+	Sample (1,Timer1_mSec,Float)
+	Sample (1,nBytes_LI7700,Long)
+EndTable
+
+'DataTable (ds_data,TRUE,-1)
+'  DataInterval(0,30,Sec,0)
+'  CardOut(0,-1)
+  
+  'Sample (3,DS2(1),IEEE4)      'DS2
+ ' WindVector(1,DS2Speed,DS2Dir,IEEE4,0,0,0,2)
+  'Alias DS2(1) = DS2Speed
+  'Alias DS2(2) = DS2Dir
+  'Alias DS2(3) = DS2Temp
+  
+'EndTable
+
+'Meteorological Data Table (MET) Datalogger )
+DataTable (met_data,TRUE,-1)
+  DataInterval (0,Output_Interval_Met,Min,100)
+  CardOut(0,-1)
+  Average (1,batt_volt,IEEE4,False) 	'DataLogger Battary Voltage
+  Average (1,panel_temp,IEEE4,False) 	'DataLogger Panel Temp
+EndTable
+
+'---------------------------------------------------------
+' Main Program
+'---------------------------------------------------------
+  
+BeginProg
+ SDMSpeed(50)
+ 
+ TCPClose (101)
+ 
+' SerialOpen (Com1,38400,3,0,SERIAL_BUFF_SIZE)
+
+
+
+'\\Start up Timer1 used for handling LI-7700 polling.
+	Timer1_mSec=Timer(1,mSec,0)'Start Timer1
+'//
+
+
+ 
+  Scan (Scan_Interval,mSec,0,0)
+    
+		
+    'Get EC150 wind and Sonic Temperature, and IRGA data
+'    EC100 (UxCSAT_h,1,1)
+    
+    'Get CSAT3B wind and Sonic Temperature Data.    
+    CSAT3B (csat_data(),0,SDM_ADDR,0) 'CSAT3B (Destination, Bus, Address (must connect to update), OperatingMode) CSAT_OPT = 10
+    
+    'Get LI-7500 Data.
+    CS7500 (LI7500_CO2,1,1,6)
+
+
+'\\Get LI-7700 Data
+'\Timer used for handling LI-7700 polling.
+	Timer1_mSec=Timer(1,mSec,4)'Read Timer1
+'/
+	nBytes_LI7700=SerialInChk(socket)
+	If nBytes_LI7700>NBE_LI7700-10 Then
+		New7700Data_Flag=True
+		SerialInRecord(socket,DATA_string,&h44,0,&h0A,NBR,01)
+		SplitStr (LI7700_time(1),DATA_string,CHR(09),3,4)
+		SplitStr (LI7700(1),DATA_string,CHR(09),22,4)
+		checksum_flag = (LI7700_chksum EQV (CheckSum ("D"&DATA_string,7,NBR-2)))
+		checksum_datalogger = CheckSum ("D"&DATA_string,7,NBR-2)
+	EndIf
+	If socket>0 And (Timer1_mSec>10000 Or New7700Data_Flag) Then
+		SerialOutBlock (socket,"<licor><li7700><cmd><poll>true</poll></cmd></li7700></licor>"+CHR(10),61)
+	EndIf
+
+
+'\ Reset and start Timer1 after we have our stored the new data in the ts_data table.
+		CallTable(ts_data)
+		If New7700Data_Flag Then
+			Timer1_mSec=Timer(1,mSec,2)'Reset and start Timer1.
+			New7700Data_Flag=False
+		EndIf
+'/
+
+
+
+'//
+
+  
+
+
+    'PulseCount(Sun_Contact,1,1 ,2,1,1.0,0) ' BF5 Sun Contact
+    
+  NextScan
+
+  SlowSequence
+
+  Scan (30,Sec,3,0)  'Get Data for Met Table
+    
+    Battery (batt_volt)
+    PanelTemp (panel_temp,250)
+
+    CallTable(met_data)
+
+    tcpip_socket_status = SerialInChk (socket)
+    If ( tcpip_socket_status = -1) Then
+      socket = TCPOpen ("169.254.64.95",7700,Buffer_Size_LI7700)
+    EndIf
+  NextScan
+
+EndProg
+
