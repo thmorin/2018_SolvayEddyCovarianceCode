@@ -1,8 +1,8 @@
 % Process data
 tic
+HELLO WORLD
 % clear all
 readfromDAT=1;
-
 %%%%% This is the process of data from the Olentangy River Wetland
 %%%%% Research Park
 % 2013 10 10: Creating this process to run data after the switch to the
