@@ -33,7 +33,11 @@ D=fread(fileID,[cols inf],'uint32')';
 fclose(fileID);
 
 zip=zeros(size(D,1),1);
-T_Stamp=datenum(1990,1,1,0,0,0)+datenum(zip,zip,zip,zip,zip,D(:,1)+D(:,2)/10^9);
+
+sec=round(D(:,1)+D(:,2)/10^9,1);
+
+T_Stamp=datenum(1990,1,1,0,0,0)+datenum(zip,zip,zip,zip,zip,sec);
 [year,month,day,hour,minut,secon]=datevec(T_Stamp);
+secon=round(secon,1);
 data=[T_Stamp D(:,3) C(:,4:end)];
 end

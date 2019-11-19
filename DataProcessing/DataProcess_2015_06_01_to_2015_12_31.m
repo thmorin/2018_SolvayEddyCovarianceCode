@@ -1,3 +1,4 @@
+clear;close;clc
 % Process data
 %% Delete After finished editing 
 % NOTE: Delete to everything that has to do with slow, DS, or RMY. Line 337 is where we
@@ -36,7 +37,8 @@ readfromDAT=1;
 % '10. DS2 - slow read sonic anemometer at 15 meter
 %%
 year=2019;
-cd('C:\Users\vldavies\Documents\GitHub\2018_SolvayEddyCovarianceCode\DataProcessing\');
+% cd('C:\Users\vldavies\Documents\GitHub\2018_SolvayEddyCovarianceCode\DataProcessing\');
+cd('C:\Users\thmorin\Documents\Projects\SolvayTower\EC_code\DataProcessing\');
 datadirectory =  '../SolvayRawData/';
 codedirectory =  '../PreProcessSubs/';
 savedir       = ['../Processed' num2str(year) '/'];
@@ -103,7 +105,7 @@ R_g=8.314510;                                                              % [J/
 %%
 % File name format for 10Hz data is: thmremote_ts_data_2011_03_12_0000.dat
 
-for CD = 1:length(DOY_range) %changing 2 to 1 
+for CD = 2:length(DOY_range) %changing 2 to 1 
 %    [filemonth, fileday] = DOYtoMoDay(DOY_range(CD),year); %juilan day correction
     [fileyear,filemonth,fileday]=datevec(DOY_range(CD));
     disp(['Beginning ' num2str(year) '/' num2str(filemonth,'%02d') '/' num2str(fileday,'%02d')]);
@@ -111,25 +113,51 @@ for CD = 1:length(DOY_range) %changing 2 to 1
      
     %% Converting Binary Files to TOA3
 
-    tsDatOut=[];
+    tsDatOut=[];obs_time=[];
+    if CD>1
+        [fileyear_2,filemonth_2,fileday_2]=datevec(DOY_range(CD-1));
+        
+        files=dir([datadirectory 'thmremote_ts_data_' ...
+            num2str(fileyear_2) '_' num2str(filemonth_2, '%02d') '_' num2str(fileday_2,'%02d') '_' num2str(23, '%02d') '*']);
+        
+        [tsData,tsHeaders,Var_names,raw_year,raw_month,raw_day,raw_hour,raw_minut,raw_secon]=...
+             readTOB1([files(1).folder '\' files(1).name]);
+         
+         tsDatOut=[tsDatOut;tsData];
+         obs_time=[obs_time;datenum(raw_year,raw_month,raw_day,raw_hour,raw_minut,raw_secon)];
+    end
      for i=00:23
          files=dir([datadirectory 'thmremote_ts_data_' ...
             num2str(fileyear) '_' num2str(filemonth, '%02d') '_' num2str(fileday,'%02d') '_' num2str(i, '%02d') '*']);
-         [tsData,tsHeaders,Var_names]=readTOB1([files(1).folder '\' files(1).name]);
+         [tsData,tsHeaders,Var_names,raw_year,raw_month,raw_day,raw_hour,raw_minut,raw_secon]=...
+             readTOB1([files(1).folder '\' files(1).name]);
          tsDatOut=[tsDatOut;tsData];
+         obs_time=[obs_time;datenum(raw_year,raw_month,raw_day,raw_hour,raw_minut,raw_secon)];
      end
      
      %% Filtering daily files
-     nanosec = 864000;
-     for b = 1:length(DOY_range)
-         filnamday = day(datetime(DOY_range(b),'ConvertFrom','datenum'),'dayofyear');
-         filnamday = repmat(filnamday,1,nanosec)';
-     end
- %    filnamday = datenum(DOY_range);
- %    filnamday = datetime(filnamday,'ConvertFrom','datenum');
- %    filnamday = day(filnamday,'dayofyear'); 
- %    filnamday=repmat(filnamday,1,nanosec)';
- %    filnamday=filnamday(:)';       
+     tens_of_sec = 864000; %number of tenths of a seconds in a day
+    %% make perfect structure for one day
+    date_skel=nan(tens_of_sec,6);
+    date_skel(:,1)=fileyear;
+    date_skel(:,2)=filemonth;
+    date_skel(:,3)=fileday;
+    date_skel(:,4)=reshape(repmat(0:23,60*60*10,1),tens_of_sec,1);
+    date_skel(:,5)= reshape(repmat(0:59,60*10,24),tens_of_sec,1);
+    date_skel(:,6)= reshape(repmat(0:0.1:59.9,1,24*60),tens_of_sec,1);
+    date_skel_num=datenum(date_skel);
+    
+    [yn,whereat]=ismember(obs_time,date_skel_num);
+    ts_filt=nan(tens_of_sec,size(tsDatOut,2));
+    ts_filt(whereat(yn==1),:)=tsDatOut(yn==1,:);
+    %      for b = 1:length(DOY_range)
+%          filnamday = day(datetime(DOY_range(b),'ConvertFrom','datenum'),'dayofyear');
+%          filnamday = repmat(filnamday,1,nanosec)';
+%      end
+     
+     
+     
+    
       datday = day(datetime(datenum(tsDatOut(:,1)),'ConvertFrom','datenum'),'dayofyear');
  %    datday = datetime(datday,'ConvertFrom','datenum');
  %    datday = day(datday,'dayofyear');
@@ -145,7 +173,7 @@ for CD = 1:length(DOY_range) %changing 2 to 1
 %           end
 %       end
      
-     Fdata = tsDatOut;
+     Fdata = ts_filt;
     %%
     [DespikeW,~,fluxW,~,~,~,~,~,~,~,~,~,~,~,~,~,Header]=ORWPrealocatingVariables(nw,ntsf,NFavg,nfcol);
     currentday = DOY_range(CD);
@@ -183,13 +211,13 @@ for CD = 1:length(DOY_range) %changing 2 to 1
         % Adjust column numbers from data including column numbers of diagnostics
         DespikeW.Time = Fdata(:,1); %changed from (:,1:3) TQUEST: what is this? 
         
-        [DespikeW.CSAT_U2, DespikeW.CSAT_UQA2]= DeSpike(Fdata(:, 4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'EC150',Fdata(:,8)); % CSAT Ux [m/s]
+        [DespikeW.CSAT_U2, DespikeW.CSAT_UQA2]= DeSpike(Fdata(:, 4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Ux [m/s]
         fluxW.CSAT_UQA2 = DataQA (DespikeW.CSAT_UQA2, NFavg);
-        [DespikeW.CSAT_V2, DespikeW.CSAT_VQA2] = DeSpike(Fdata(:,5),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'EC150',Fdata(:,8)); % CSAT Uy [m/s]
+        [DespikeW.CSAT_V2, DespikeW.CSAT_VQA2] = DeSpike(Fdata(:,5),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Uy [m/s]
         fluxW.CSAT_VQA2 = DataQA (DespikeW.CSAT_VQA2, NFavg);
-        [DespikeW.CSAT_W2, DespikeW.CSAT_WQA2] = DeSpike(Fdata(:,6),2400,Dspk.HWSTD,Dspk.HWmn,Dspk.HWmx,Dspk.HWtpr,'EC150',Fdata(:,8)); % CSAT Uz [m/s]
+        [DespikeW.CSAT_W2, DespikeW.CSAT_WQA2] = DeSpike(Fdata(:,6),2400,Dspk.HWSTD,Dspk.HWmn,Dspk.HWmx,Dspk.HWtpr,'CSAT3',Fdata(:,8)); % CSAT Uz [m/s]
         fluxW.CSAT_WQA2 = DataQA (DespikeW.CSAT_WQA2, NFavg);
-        [DespikeW.CSAT_Tmp2, DespikeW.CSAT_TmpQA2] = DeSpike(Fdata(:,7),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'EC150',Fdata(:,8)); % CSAT Ts [Deg C]
+        [DespikeW.CSAT_Tmp2, DespikeW.CSAT_TmpQA2] = DeSpike(Fdata(:,7),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'CSAT3',Fdata(:,8)); % CSAT Ts [Deg C]
         fluxW.CSAT_TmpQA2 = DataQA (DespikeW.CSAT_TmpQA2, NFavg);
         
         RSSIper=20;
@@ -198,39 +226,15 @@ for CD = 1:length(DOY_range) %changing 2 to 1
         % Diagnostic value (for interpetation use errorcodeLI7500.m).
         % (CRB command is: CS7500 (LI7500_CO2,1,7,6) )
 	
-        size(Fdata)
-        if size(Fdata,3)>17 % this should be record?
-            
-        [DespikeW.LI7500_C2, DespikeW.LI7500_CQA2] = DeSpike (Fdata(:,9)/44,3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'EC150',Fdata(:,12),Fdata(:,19),RSSIper);      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
+        [DespikeW.LI7500_C2, DespikeW.LI7500_CQA2] = DeSpike (Fdata(:,9)/44,3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500',Fdata(:,12));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
         DespikeW.LI7500_C2=nanWinSlaughterer(DespikeW.LI7500_C2,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7500_CQA2 = DataQA (DespikeW.LI7500_CQA2, NFavg);
-        [DespikeW.LI7500_Q2, DespikeW.LI7500_QQA2] = DeSpike (Fdata(:,10)*1000/18,3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'EC150',Fdata(:,12),Fdata(:,20),RSSIper);    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h20signal or CO2 signal
+        [DespikeW.LI7500_Q2, DespikeW.LI7500_QQA2] = DeSpike (Fdata(:,10)*1000/18,3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500',Fdata(:,12));    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h20signal or CO2 signal
         DespikeW.LI7500_Q2=nanWinSlaughterer(DespikeW.LI7500_Q2,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7500_QQA2 = DataQA (DespikeW.LI7500_QQA2, NFavg);
-        [DespikeW.LI7500_P2, DespikeW.LI7500_PQA2] = DeSpike(Fdata(:,11),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'EC150',Fdata(:,12));     % LI7500 Pressure [ Pa ]
+        [DespikeW.LI7500_P2, DespikeW.LI7500_PQA2] = DeSpike(Fdata(:,11),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500',Fdata(:,12));     % LI7500 Pressure [ Pa ]
         fluxW.LI7500_PQA2 = DataQA (DespikeW.LI7500_PQA2, NFavg);
         DespikeW.LI7500_P2=1000*DespikeW.LI7500_P2;
-
-Fdata(Fdata(:,8)>70,8) = nan; %changed from 25 to 8 as CSAT diag code?
-[DespikeW.CSAT_U, DespikeW.CSAT_UQA]= DeSpike(Fdata(:, 4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Ux [m/s]
-        fluxW.CSAT_UQA = DataQA (DespikeW.CSAT_UQA, NFavg);
-        [DespikeW.CSAT_V, DespikeW.CSAT_VQA] = DeSpike(Fdata(:,5),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Uy [m/s]
-        fluxW.CSAT_VQA = DataQA (DespikeW.CSAT_VQA, NFavg);
-        [DespikeW.CSAT_W, DespikeW.CSAT_WQA] = DeSpike(Fdata(:,6),2400,Dspk.HWSTD,Dspk.HWmn,Dspk.HWmx,Dspk.HWtpr,'CSAT3',Fdata(:,8)); % CSAT Uz [m/s]
-        fluxW.CSAT_WQA = DataQA (DespikeW.CSAT_WQA, NFavg);
-        [DespikeW.CSAT_Tmp, DespikeW.CSAT_TmpQA] = DeSpike(Fdata(:,7),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'CSAT3',Fdata(:,8)); % CSAT Ts [Deg C]
-        fluxW.CSAT_TmpQA = DataQA (DespikeW.CSAT_TmpQA, NFavg);
-
-
-        [DespikeW.LI7500_C, DespikeW.LI7500_CQA] = DeSpike (Fdata(:,26),3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500',Fdata(:,29));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
-        DespikeW.LI7500_C=nanWinSlaughterer(DespikeW.LI7500_C,min_nans,window,num_wins,nan_STDcutoff);
-        fluxW.LI7500_CQA = DataQA (DespikeW.LI7500_CQA, NFavg);
-        [DespikeW.LI7500_Q, DespikeW.LI7500_QQA] = DeSpike (Fdata(:,27),3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500',Fdata(:,29));    % LI7500 H2O [mmol/m^3]
-        DespikeW.LI7500_Q=nanWinSlaughterer(DespikeW.LI7500_Q,min_nans,window,num_wins,nan_STDcutoff);
-        fluxW.LI7500_QQA = DataQA (DespikeW.LI7500_QQA, NFavg);
-        [DespikeW.LI7500_P, DespikeW.LI7500_PQA] = DeSpike(Fdata(:,28),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500',Fdata(:,29));     % LI7500 Pressure [ Pa ]
-        fluxW.LI7500_PQA = DataQA (DespikeW.LI7500_PQA, NFavg);
-        DespikeW.LI7500_P=1000*DespikeW.LI7500_P;
 
         
         % LI7700 Signal Strength [ max 70 min 0, the higher the better ]
@@ -238,9 +242,6 @@ Fdata(Fdata(:,8)>70,8) = nan; %changed from 25 to 8 as CSAT diag code?
         %Z_old = -5.02946; Z_new = -14.2544;
         %S_old = 1.97176e-06; S_new = 0.000106478;
         [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,31),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,30),Fdata(:,33),RSSIper);      % LI7700 CH4 [mmol/m^3] { Fdata(:,18) = LI7700 Diag}
-%         if CD==1 || CD==2
-%             DespikeW.LI7700_M(1:length(DespikeW.LI7700_M)/2)=((DespikeW.LI7700_M(1:length(DespikeW.LI7700_M)/2)/S_old+Z_old)-Z_new)*S_new;
-%         end
         
         DespikeW.LI7700_M=nanWinSlaughterer(DespikeW.LI7700_M,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7700_MQA = DataQA (DespikeW.LI7700_MQA, NFavg);
@@ -251,15 +252,9 @@ Fdata(Fdata(:,8)>70,8) = nan; %changed from 25 to 8 as CSAT diag code?
         DespikeW.LI7700_M(isnan(DespikeW.LI7700_P))=nan;
 %    end %~isempty(fast)
     
-    if CD~=1
-        save([savedir 'DespikeW/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_DespikeW.mat'],'DespikeW');
-        save([savedir 'FastData/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_FastData.mat'],'Fdata');
-        save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_DataHeader.mat'],'Header');
-    else
         save([savedir 'DespikeW/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DespikeW.mat'],'DespikeW');
         save([savedir 'FastData/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_FastData.mat'],'Fdata');
         save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DataHeader.mat'],'Header');
-    end
     
     clear Fdata Header tmpTEMPRMY
     
@@ -275,15 +270,6 @@ Fdata(Fdata(:,8)>70,8) = nan; %changed from 25 to 8 as CSAT diag code?
     
     disp([savedir site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_flux.mat; of raw file: ' fast.name])
     
-    if CD~=1
-        save([savedir 'flux/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_flux.mat'],'fluxW');
-    else
-        save([savedir 'flux/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_flux.mat'],'fluxW');
-    end
+    save([savedir 'flux/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_flux.mat'],'fluxW');
     toc
 end     % for the files in Data folder
-
-if ~isempty(dir([savedir  'flux/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_1_flux.mat'])) && ~isempty(dir([savedir 'flux/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_flux.mat']))
-    ORW126FluxJoiner;
-end
-end %CD?
