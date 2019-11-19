@@ -1,119 +1,119 @@
 % Pre Allocating for all the variables in the process
-function [W1min,DespikeW,tmpTEMPRMY,fluxW,fluxWind,theta,alfa,u_RMY,v_RMY,w_RMY,u_CSAT,v_CSAT,w_CSAT,qWPL,cWPL,mWPL,Sdata,Fdata,Header,Tr_CSAT,Tr_RMY]...
-    =ORWPrealocatingVariables(ntss,nw,ntsf,NFavg,nscol,nfcol)
+function [DespikeW,tmpTEMPRMY,fluxW,fluxWind,theta,alfa,u_RMY,v_RMY,w_RMY,u_CSAT,v_CSAT,w_CSAT,qWPL,cWPL,mWPL,Fdata,Header,Tr_CSAT,Tr_RMY]...
+    =ORWPrealocatingVariables(nw,ntsf,NFavg,nfcol)
     
     NSavg = 30;
     
     % Measurments at 1/60 Hz
-    W1min.year   = nan(ntss,1);
-    W1min.doy    = nan(ntss,1);
-    W1min.dectime = nan(ntss,1);
+    %W1min.year   = nan(ntss,1);
+    %W1min.doy    = nan(ntss,1);
+    %W1min.dectime = nan(ntss,1);
     
     
-    W1min.Tm     = nan(ntss,1);       % HMP45C Temp [ Deg C ]
-    W1min.TmQA   = ones(ntss,1)*6;
-    W1min.Pvapor = nan(ntss,1);       % HMP45C Vapor pressure [ Pa ]
-    W1min.PvaporQA = ones(ntsf,1)*6;
-    W1min.Pvaporsat = nan(ntss,1);    % HMP45C Saturated Vapor Pressure [ ], Calculated. 611.2*exp(17.67*W1min.Tm./(243.51+W1min.Tm))
-    W1min.Hum    = nan(ntss,1);       % HMP45C Relative humidity [ % ]
-    W1min.HumQA  = ones(ntss,1)*6;
-    W1min.Q =      nan(ntss,1);       % HMP45C H2O Density [mol/m^3]  {Ideal gas law, n/V=Q=P/(RT)}
+    %W1min.Tm     = nan(ntss,1);       % HMP45C Temp [ Deg C ]
+    %W1min.TmQA   = ones(ntss,1)*6;
+    %W1min.Pvapor = nan(ntss,1);       % HMP45C Vapor pressure [ Pa ]
+    %W1min.PvaporQA = ones(ntsf,1)*6;
+    %W1min.Pvaporsat = nan(ntss,1);    % HMP45C Saturated Vapor Pressure [ ], Calculated. 611.2*exp(17.67*W1min.Tm./(243.51+W1min.Tm))
+    %W1min.Hum    = nan(ntss,1);       % HMP45C Relative humidity [ % ]
+    %W1min.HumQA  = ones(ntss,1)*6;
+    %W1min.Q =      nan(ntss,1);       % HMP45C H2O Density [mol/m^3]  {Ideal gas law, n/V=Q=P/(RT)}
 
-    W1min.C1 = nan(ntss,1);  	      % ID200 CO2 reading at 2m [ppm]
-    W1min.C1QA = ones(ntss,1)*6;
-    W1min.C2 = nan(ntss,1);          % ID200 CO2 reading at 5m [ppm]
-    W1min.C2QA = ones(ntss,1)*6;
-    W1min.C3 = nan(ntss,1);         % ID200 CO2 reading at 10m [ppm]   
-    W1min.C3QA = nan(ntss,1)*6;
+    %W1min.C1 = nan(ntss,1);  	      % ID200 CO2 reading at 2m [ppm]
+    %W1min.C1QA = ones(ntss,1)*6;
+    %W1min.C2 = nan(ntss,1);          % ID200 CO2 reading at 5m [ppm]
+    %W1min.C2QA = ones(ntss,1)*6;
+    %W1min.C3 = nan(ntss,1);         % ID200 CO2 reading at 10m [ppm]   
+    %W1min.C3QA = nan(ntss,1)*6;
  
-    W1min.DS2_ubar = nan(ntss,1);        % DS2 wind speed [m/s]
-    W1min.DS2_uQA = nan(ntss,1)*6;
-    W1min.DS2_dir = nan(ntss,1);      % DS2 wind direction [deg off north, clockwise]
-    W1min.DS2_gust = nan(ntss,1);     % DS2 gust speed [m/s]
-    W1min.DS2_gustQA = nan(ntss,1)*6;
+    %W1min.DS2_ubar = nan(ntss,1);        % DS2 wind speed [m/s]
+    %W1min.DS2_uQA = nan(ntss,1)*6;
+    %W1min.DS2_dir = nan(ntss,1);      % DS2 wind direction [deg off north, clockwise]
+    %W1min.DS2_gust = nan(ntss,1);     % DS2 gust speed [m/s]
+    %W1min.DS2_gustQA = nan(ntss,1)*6;
     
-    W1min.Albedo = nan(ntss,1);       % NR01 Albedo, calculated in calculate_radiation subrutine.
-    W1min.IRDown = nan(ntss,1);       % NR01 Net Long (Infra red) radiation down, calculated in calculate_radiation subrutine.
-    W1min.IRDownQA = ones(ntss,1)*6;
-    W1min.IRUp   = nan(ntss,1);       % NR01 Net Long (Infra red) radiation up, calculated in calculate_radiation subrutine.
-    W1min.IRUpQA   = ones(ntss,1)*6;
-    W1min.NetRs  = nan(ntss,1);       % NR01 Net radiation Short wave, calculated in calculate_radiation subrutine.
-    W1min.NetRl  = nan(ntss,1);       % NR01 Net radiation Long wave, calculated in calculate_radiation subrutine.
-    W1min.UpTot  = nan(ntss,1);       % NR01 Net radiation up, calculated in calculate_radiation subrutine.
-    W1min.DownTot= nan(ntss,1);       % NR01 Net radiation down, calculated in calculate_radiation subrutine.
-    W1min.NetRad = nan(ntss,1);       % NR01 Net radiation, calculated in calculate_radiation subrutine.
-    W1min.SWDown = nan(ntss,1);       % NR01 SR01Dn Short Radiation Down [ W/m^2 ]
-    W1min.SWDownQA = ones(ntss,1)*6;
-    W1min.SWUp   = nan(ntss,1);       % NR01 SR01UP Short Radiation Up [ W/m^2 ]
-    W1min.SWUpQA   = ones(ntss,1)*6;
-    W1min.Tcnr01 = nan(ntss,1);       % NR01 TCC Temp [ Deg C ]
-    W1min.Tcnr01QA = ones(ntss,1)*6;
+    %W1min.Albedo = nan(ntss,1);       % NR01 Albedo, calculated in calculate_radiation subrutine.
+    %W1min.IRDown = nan(ntss,1);       % NR01 Net Long (Infra red) radiation down, calculated in calculate_radiation subrutine.
+    %W1min.IRDownQA = ones(ntss,1)*6;
+    %W1min.IRUp   = nan(ntss,1);       % NR01 Net Long (Infra red) radiation up, calculated in calculate_radiation subrutine.
+    %W1min.IRUpQA   = ones(ntss,1)*6;
+    %W1min.NetRs  = nan(ntss,1);       % NR01 Net radiation Short wave, calculated in calculate_radiation subrutine.
+    %W1min.NetRl  = nan(ntss,1);       % NR01 Net radiation Long wave, calculated in calculate_radiation subrutine.
+    %W1min.UpTot  = nan(ntss,1);       % NR01 Net radiation up, calculated in calculate_radiation subrutine.
+    %W1min.DownTot= nan(ntss,1);       % NR01 Net radiation down, calculated in calculate_radiation subrutine.
+    %W1min.NetRad = nan(ntss,1);       % NR01 Net radiation, calculated in calculate_radiation subrutine.
+    %W1min.SWDown = nan(ntss,1);       % NR01 SR01Dn Short Radiation Down [ W/m^2 ]
+    %W1min.SWDownQA = ones(ntss,1)*6;
+    %W1min.SWUp   = nan(ntss,1);       % NR01 SR01UP Short Radiation Up [ W/m^2 ]
+    %W1min.SWUpQA   = ones(ntss,1)*6;
+    %W1min.Tcnr01 = nan(ntss,1);       % NR01 TCC Temp [ Deg C ]
+    %W1min.Tcnr01QA = ones(ntss,1)*6;
     
-    W1min.Total_PAR  = nan(ntss,1);     % Direct/diffuse PAR sensor - Total PAR [mV]
-    W1min.Total_PARQA  = ones(ntss,1)*6;
-    W1min.Diffuse_PAR= nan(ntss,1);     % Direct/diffuse PAR sensor - Diffuse PAR  [mV]
-    W1min.Diffuse_PARQA= ones(ntsf,1)*6;
+    %W1min.Total_PAR  = nan(ntss,1);     % Direct/diffuse PAR sensor - Total PAR [mV]
+    %W1min.Total_PARQA  = ones(ntss,1)*6;
+    %W1min.Diffuse_PAR= nan(ntss,1);     % Direct/diffuse PAR sensor - Diffuse PAR  [mV]
+    %W1min.Diffuse_PARQA= ones(ntsf,1)*6;
  
 
-    W1min.STat8cmOW_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat25cmOW_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmOWr_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmIM_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat25cmIM_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmIMr_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmUL_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmOW_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat25cmOW_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmOWr_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmIM_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat25cmIM_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmIMr_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
-    W1min.STat8cmUL_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmOW_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat25cmOW_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmOWr_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmIM_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat25cmIM_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmIMr_W1 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmUL_W1  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmOW_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat25cmOW_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmOWr_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmIM_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat25cmIM_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmIMr_W2 = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
+    %W1min.STat8cmUL_W2  = nan(ntss,1);     % 107-L Soil temp sensor [ Deg C ]
     
-    W1min.STat8cmOW_W1QA  = ones(ntss,1)*6;
-    W1min.STat25cmOW_W1QA = ones(ntss,1)*6; 
-    W1min.STat8cmOWr_W1QA = ones(ntss,1)*6; 
-    W1min.STat8cmIM_W1QA  = ones(ntss,1)*6;
-    W1min.STat25cmIM_W1QA = ones(ntss,1)*6;
-    W1min.STat8cmIMr_W1QA = ones(ntss,1)*6;
-    W1min.STat8cmUL_W1QA  = ones(ntss,1)*6;
-    W1min.STat8cmOW_W2QA  = ones(ntss,1)*6;
-    W1min.STat25cmOW_W2QA = ones(ntss,1)*6;
-    W1min.STat8cmOWr_W2QA = ones(ntss,1)*6;
-    W1min.STat8cmIM_W2QA  = ones(ntss,1)*6;
-    W1min.STat25cmIM_W2QA = ones(ntss,1)*6;
-    W1min.STat8cmIMr_W2QA = ones(ntss,1)*6;
-    W1min.STat8cmUL_W2QA  = ones(ntss,1)*6;
+    %W1min.STat8cmOW_W1QA  = ones(ntss,1)*6;
+    %W1min.STat25cmOW_W1QA = ones(ntss,1)*6; 
+    %W1min.STat8cmOWr_W1QA = ones(ntss,1)*6; 
+    %W1min.STat8cmIM_W1QA  = ones(ntss,1)*6;
+    %W1min.STat25cmIM_W1QA = ones(ntss,1)*6;
+    %W1min.STat8cmIMr_W1QA = ones(ntss,1)*6;
+    %W1min.STat8cmUL_W1QA  = ones(ntss,1)*6;
+    %W1min.STat8cmOW_W2QA  = ones(ntss,1)*6;
+    %W1min.STat25cmOW_W2QA = ones(ntss,1)*6;
+    %W1min.STat8cmOWr_W2QA = ones(ntss,1)*6;
+    %W1min.STat8cmIM_W2QA  = ones(ntss,1)*6;
+    %W1min.STat25cmIM_W2QA = ones(ntss,1)*6;
+    %W1min.STat8cmIMr_W2QA = ones(ntss,1)*6;
+    %W1min.STat8cmUL_W2QA  = ones(ntss,1)*6;
     
-    W1min.DS2_ubar = nan(ntss,1);
-    W1min.DS2_dir  = nan(ntss,1);
-    W1min.DS2_u    = nan(ntss,1);
-    W1min.DS2_v    = nan(ntss,1);
+    %W1min.DS2_ubar = nan(ntss,1);
+    %W1min.DS2_dir  = nan(ntss,1);
+    %W1min.DS2_u    = nan(ntss,1);
+    %W1min.DS2_v    = nan(ntss,1);
     
-    W1min.DS2_uQA = ones(ntss,1)*6;
+    %W1min.DS2_uQA = ones(ntss,1)*6;
 
-    W1min.WD_min = nan(ntss,1);
-    W1min.WD_bar = nan(ntss,1);
-    W1min.WD_max = nan(ntss,1);
-    W1min.WS_min  = nan(ntss,1);
-    W1min.WS_bar  = nan(ntss,1);
-    W1min.WS_max  = nan(ntss,1);
-    W1min.tair_2  = nan(ntss,1);
-    W1min.rH_2    = nan(ntss,1);
-    W1min.pres    = nan(ntss,1);
-    W1min.rain_accum  = nan(ntss,1);
-    W1min.rain_dur    = nan(ntss,1);
-    W1min.rain_intens = nan(ntss,1);
-    W1min.hail_accum  = nan(ntss,1);
-    W1min.hail_dur    = nan(ntss,1);
-    W1min.hail_intens = nan(ntss,1);
+    %W1min.WD_min = nan(ntss,1);
+    %W1min.WD_bar = nan(ntss,1);
+    %W1min.WD_max = nan(ntss,1);
+    %W1min.WS_min  = nan(ntss,1);
+    %W1min.WS_bar  = nan(ntss,1);
+    %W1min.WS_max  = nan(ntss,1);
+    %W1min.tair_2  = nan(ntss,1);
+    %W1min.rH_2    = nan(ntss,1);
+    %W1min.pres    = nan(ntss,1);
+    %W1min.rain_accum  = nan(ntss,1);
+    %W1min.rain_dur    = nan(ntss,1);
+    %W1min.rain_intens = nan(ntss,1);
+    %W1min.hail_accum  = nan(ntss,1);
+    %W1min.hail_dur    = nan(ntss,1);
+    %W1min.hail_intens = nan(ntss,1);
     
-    W1min.WS_min_QA = ones(ntss,1)*6;
-    W1min.WS_bar_QA = ones(ntss,1)*6;
-    W1min.WS_max_QA = ones(ntss,1)*6;
-    W1min.tair_2_QA = ones(ntss,1)*6;
-    W1min.rH_2_QA   = ones(ntss,1)*6;
-    W1min.pres_QA   = ones(ntss,1)*6;
+    %W1min.WS_min_QA = ones(ntss,1)*6;
+    %W1min.WS_bar_QA = ones(ntss,1)*6;
+    %W1min.WS_max_QA = ones(ntss,1)*6;
+    %W1min.tair_2_QA = ones(ntss,1)*6;
+    %W1min.rH_2_QA   = ones(ntss,1)*6;
+    %W1min.pres_QA   = ones(ntss,1)*6;
     
     % Measurments at 10 Hz
     DespikeW.Time = nan(ntsf,3);
@@ -496,7 +496,7 @@ function [W1min,DespikeW,tmpTEMPRMY,fluxW,fluxWind,theta,alfa,u_RMY,v_RMY,w_RMY,
     Header.DS3 = nan;
     Header.DS4 = nan;
     
-    Sdata=nan(ntss,nscol);              %Slow data raw file
+    %Sdata=nan(ntss,nscol);              %Slow data raw file
     Fdata=nan(ntsf,nfcol);              %Fast data raw file
     
     fluxW.WS_min_QA = SQAmat;

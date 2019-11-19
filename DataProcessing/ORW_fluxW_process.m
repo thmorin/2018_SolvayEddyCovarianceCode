@@ -7,10 +7,10 @@ function fluxW=ORW_fluxW_process(fluxW,CW,NFavg,NSavg,ntsf,ntss,DespikeW,W1min,.
 CFV = ( (CW-1)*NFavg+1 : min( CW*NFavg , ntsf ))'; % CFV = Current Fast Values, Make a vector of the fast values to work on for this Current Window
 CSV = ( (CW-1)*NSavg+1 : min( NSavg*CW , ntss ))'; % CSV = Current Slow Values, Make a vector of the slow values to work on for this Current Window
 
-LI7500path=0.125;                %m
+LI7500path=0.125;                %m spectrual correction
 LI7500dia=0.015;                 %m
 LI7700path=0.475;                %m
-LI7700dia=0.075;                   %m
+LI7700dia=0.075;                 %m
 EC150path=0.144;                 %m
 EC150dia=0.015;                  %m
 
