@@ -220,7 +220,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         [DespikeW.CSAT_Tmp2, DespikeW.CSAT_TmpQA2] = DeSpike(Fdata(:,7),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'CSAT3',Fdata(:,8)); % CSAT Ts [Deg C]
         fluxW.CSAT_TmpQA2 = DataQA (DespikeW.CSAT_TmpQA2, NFavg);
         
-        RSSIper=20;
+        RSSIper=30; %RSSI cutoff (changed from 20)
         
         % LI7500 in mode 6 exporting CO2 & H2O [mmol/m^3], Pressure [kPa]
         % Diagnostic value (for interpetation use errorcodeLI7500.m).
@@ -241,11 +241,11 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         
         %Z_old = -5.02946; Z_new = -14.2544;
         %S_old = 1.97176e-06; S_new = 0.000106478;
-        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,31),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,30),Fdata(:,33),RSSIper);      % LI7700 CH4 [mmol/m^3] { Fdata(:,18) = LI7700 Diag}
+        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,13),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,15),Fdata(:,12),RSSIper);      % LI7700 CH4 [mmol/m^3] 
         
         DespikeW.LI7700_M=nanWinSlaughterer(DespikeW.LI7700_M,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7700_MQA = DataQA (DespikeW.LI7700_MQA, NFavg);
-        [DespikeW.LI7700_P, DespikeW.LI7700_PQA] = DeSpike(Fdata(:,32),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7700',Fdata(:,30));     % LI7700 Pressure [Pa] { Fdata(:,18) = LI7700 Diag}
+        [DespikeW.LI7700_P, DespikeW.LI7700_PQA] = DeSpike(Fdata(:,14),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7700',Fdata(:,12));     % LI7700 Pressure [Pa] 
         fluxW.LI7700_PQA = DataQA (DespikeW.LI7700_PQA, NFavg);
         DespikeW.LI7700_P=1000*DespikeW.LI7700_P;
         %Forces methane to nan when P is nan. P will normally only be nan if mirror is spinning
@@ -260,8 +260,8 @@ for CD = 2:length(DOY_range) %changing 2 to 1
     
     for CW = 1:nw   % CW = Current Window ; nw = Number Of Windows per file
         
-        fluxW=ORW_fluxW_process(fluxW,CW,NFavg,NSavg,ntsf,DespikeW,...
-            MagneticCorrection, CSAT_angle,RMY_angle,...
+        fluxW=ORW_fluxW_process(fluxW,CW,NFavg,ntsf,DespikeW,...
+            MagneticCorrection, CSAT_angle,...
             LI7500,Sdist_LI7500init,LI7700,Sdist_LI7700init,...
             Sonic_pathLength,Sonic_Height,AVGtime,dispH, freqF,nw, concatenating_files,...
             R_d);
