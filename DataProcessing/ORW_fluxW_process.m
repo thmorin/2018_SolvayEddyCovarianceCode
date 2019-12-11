@@ -1,23 +1,30 @@
-function fluxW=ORW_fluxW_process(fluxW,CW,NFavg,NSavg,ntsf,ntss,DespikeW,W1min,...
-    MagneticCorrection, CSAT_angle,RMY_angle,...
+function fluxW=ORW_fluxW_process(fluxW,CW,NFavg,ntsf,DespikeW,...
+    MagneticCorrection, CSAT_angle,...
     LI7500,Sdist_LI7500init,LI7700,Sdist_LI7700init,...
     Sonic_pathLength,Sonic_Height,AVGtime,dispH, freqF,nw, concatenating_files,...
     R_d,...
     varargin)
+
+% function fluxW=ORW_fluxW_process(fluxW,CW,NFavg,NSavg,ntsf,ntss,DespikeW,W1min,...
+%     MagneticCorrection, CSAT_angle,RMY_angle,...
+%     LI7500,Sdist_LI7500init,LI7700,Sdist_LI7700init,...
+%     Sonic_pathLength,Sonic_Height,AVGtime,dispH, freqF,nw, concatenating_files,...
+%     R_d,...
+%     varargin)
 CFV = ( (CW-1)*NFavg+1 : min( CW*NFavg , ntsf ))'; % CFV = Current Fast Values, Make a vector of the fast values to work on for this Current Window
-CSV = ( (CW-1)*NSavg+1 : min( NSavg*CW , ntss ))'; % CSV = Current Slow Values, Make a vector of the slow values to work on for this Current Window
+%CSV = ( (CW-1)*NSavg+1 : min( NSavg*CW , ntss ))'; % CSV = Current Slow Values, Make a vector of the slow values to work on for this Current Window
 
 LI7500path=0.125;                %m spectrual correction
 LI7500dia=0.015;                 %m
 LI7700path=0.475;                %m
 LI7700dia=0.075;                 %m
-EC150path=0.144;                 %m
-EC150dia=0.015;                  %m
+% EC150path=0.144;                 %m
+% EC150dia=0.015;                  %m
 
 
 tmpTEMPRMY = nan(ntsf,1);
 SQAmat=zeros(nw,6);
-SQAmat(:,[1 6])=NSavg;
+% SQAmat(:,[1 6])=NSavg;
 % Wind measurments
 fluxWind.ubar = nan(nw,1);
 fluxWind.wbar = nan(nw,1);
@@ -43,7 +50,7 @@ cWPL  = nan(NFavg,1);               % Lower sonic & LI7500 Mean H2O flux, after 
 mWPL  = nan(NFavg,1);               % Lower sonic & LI7700 Mean CH4 flux, after WPL correction.
     
 
-%%% Reading data from sonics
+%% Reading data from sonics
 if isempty(varargin)
     upper_son='RMY';
     lower_son='CSAT';
@@ -57,118 +64,116 @@ end
 
 %%
 % from Upper Sonic
-if ~strcmp(upper_son,'None') 
-    if strcmp(upper_son,'RMY') % upper_son==RMY
-        Good_Data_T_W_RMY = find( ~isnan( DespikeW.RMY_Tmp( CFV )) & ~isnan( DespikeW.RMY_W( CFV )));
-        
-        if length(Good_Data_T_W_RMY) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
-            
-            [fluxWind, ~, ~, w_2, alfa, theta] = ...
-                WindData( DespikeW.RMY_U(CFV), DespikeW.RMY_V(CFV), DespikeW.RMY_W(CFV),'RMY', MagneticCorrection, RMY_angle);
-            
-            % Wind measurments for Upper Sonic
-            fluxW.ubar_2(CW) = fluxWind.ubar;       % RMYoung Mean U
-            fluxW.wbar_2(CW) = fluxWind.wbar;       % RMYoung Mean W
-            fluxW.uu_2(CW) = fluxWind.uu;           % RMYoung Variance from mean u
-            fluxW.vv_2(CW) = fluxWind.vv;           % RMYoung Variance from mean v (After rotation mean u = 0)
-            fluxW.ww_2(CW) = fluxWind.ww;           % RMYoung Variance from mean w (After rotation mean w = 0)
-            fluxW.u3_2(CW) = fluxWind.u3;           % RMYoung moment of u
-            fluxW.v3_2(CW) = fluxWind.v3;           % RMYoung moment of v
-            fluxW.w3_2(CW) = fluxWind.w3;           % RMYoung moment of w
-            fluxW.uw_2(CW) = fluxWind.uw;           % RMYoung mean of (w.*un)
-            fluxW.vw_2(CW) = fluxWind.vw;           % RMYoung mean of (w.*v)
-            fluxW.ustar_2(CW) = fluxWind.ustar;     % RMYoung U star = (fluxW.uw^2+fluxW.vw^2)^0.25
-            fluxW.WD_2(CW)    = theta;      % RMYoung theta. calculated in RotateWind3D
-            fluxW.WDz_2(CW)   = alfa;       % RMYoung alpha. Vertical rotation angle . Calculated in RotateWind3D
-            fluxW.Sonic_Tmp_2(CW) = nanmean( DespikeW.RMY_Tmp(CFV)); % RMYoung Mean Sonic temp [Deg C]
-            fluxW.WD_2_degN = mod(fluxW.WD_2*180/pi,360);
-        else
-            w_2=nan(NFavg,1);
-        end
-    end
-end
+% if ~strcmp(upper_son,'None') 
+%     if strcmp(upper_son,'RMY') % upper_son==RMY
+%         Good_Data_T_W_RMY = find( ~isnan( DespikeW.RMY_Tmp( CFV )) & ~isnan( DespikeW.RMY_W( CFV )));
+%         
+%         if length(Good_Data_T_W_RMY) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
+%             
+%             [fluxWind, ~, ~, w_2, alfa, theta] = ...
+%                 WindData( DespikeW.RMY_U(CFV), DespikeW.RMY_V(CFV), DespikeW.RMY_W(CFV),'RMY', MagneticCorrection, RMY_angle);
+%             
+%             % Wind measurments for Upper Sonic
+%             fluxW.ubar_2(CW) = fluxWind.ubar;       % RMYoung Mean U
+%             fluxW.wbar_2(CW) = fluxWind.wbar;       % RMYoung Mean W
+%             fluxW.uu_2(CW) = fluxWind.uu;           % RMYoung Variance from mean u
+%             fluxW.vv_2(CW) = fluxWind.vv;           % RMYoung Variance from mean v (After rotation mean u = 0)
+%             fluxW.ww_2(CW) = fluxWind.ww;           % RMYoung Variance from mean w (After rotation mean w = 0)
+%             fluxW.u3_2(CW) = fluxWind.u3;           % RMYoung moment of u
+%             fluxW.v3_2(CW) = fluxWind.v3;           % RMYoung moment of v
+%             fluxW.w3_2(CW) = fluxWind.w3;           % RMYoung moment of w
+%             fluxW.uw_2(CW) = fluxWind.uw;           % RMYoung mean of (w.*un)
+%             fluxW.vw_2(CW) = fluxWind.vw;           % RMYoung mean of (w.*v)
+%             fluxW.ustar_2(CW) = fluxWind.ustar;     % RMYoung U star = (fluxW.uw^2+fluxW.vw^2)^0.25
+%             fluxW.WD_2(CW)    = theta;      % RMYoung theta. calculated in RotateWind3D
+%             fluxW.WDz_2(CW)   = alfa;       % RMYoung alpha. Vertical rotation angle . Calculated in RotateWind3D
+%             fluxW.Sonic_Tmp_2(CW) = nanmean( DespikeW.RMY_Tmp(CFV)); % RMYoung Mean Sonic temp [Deg C]
+%             fluxW.WD_2_degN = mod(fluxW.WD_2*180/pi,360);
+%         else
+%             w_2=nan(NFavg,1);
+%         end
+%     end
+% end
 %%
 %Primary anemometer
 % from Lower Sonic (Whichever is used for primarily flux calculations
-if strcmp(lower_son,'CSAT') % lower_son==CSAT 
-    Good_Data_T_W = find( ~isnan( DespikeW.CSAT_Tmp( CFV )) & ~isnan( DespikeW.CSAT_W( CFV )));
-    
-    if length(Good_Data_T_W) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
-        
-        [fluxWind, ~, ~, w_1, alfa, theta] = ...
-            WindData( DespikeW.CSAT_U(CFV), DespikeW.CSAT_V(CFV), DespikeW.CSAT_W(CFV),'CSAT', MagneticCorrection, CSAT_angle);
-        
-        % Wind measurments for Lower Sonic
-        fluxW.ubar_1(CW) = fluxWind.ubar;      % Lower Sonic Mean U
-        fluxW.wbar_1(CW) = fluxWind.wbar;      % Lower Sonic Mean W
-        fluxW.uu_1(CW) = fluxWind.uu;          % Lower Sonic Variance from mean u
-        fluxW.vv_1(CW) = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
-        fluxW.ww_1(CW) = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
-        fluxW.u3_1(CW) = fluxWind.u3;          % Lower Sonic moment of u
-        fluxW.v3_1(CW) = fluxWind.v3;          % Lower Sonic moment of v
-        fluxW.w3_1(CW) = fluxWind.w3;          % Lower Sonic moment of w
-        fluxW.uw_1(CW) = fluxWind.uw;          % Lower Sonic mean of (w.*un)
-        fluxW.vw_1(CW) = fluxWind.vw;          % Lower Sonic mean of (w.*v)
-        fluxW.ustar_1(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
-        fluxW.WD_1(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
-        fluxW.WDz_1(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
-        fluxW.Sonic_Tmp_1(CW) = nanmean( DespikeW.CSAT_Tmp(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
-        fluxW.WD_1_degN = mod(fluxW.WD_1*180/pi,360);
-    end
-elseif strcmp(lower_son,'RMY') % lower_son==RMY
-    Good_Data_T_W_RMY = find( ~isnan( DespikeW.RMY_Tmp( CFV )) & ~isnan( DespikeW.RMY_W( CFV )));
-    
-    if length(Good_Data_T_W_RMY) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
-        
-        [fluxWind, ~, ~, w_1, alfa, theta] = ...
-            WindData( DespikeW.RMY_U(CFV), DespikeW.RMY_V(CFV), DespikeW.RMY_W(CFV),'RMY', MagneticCorrection, RMY_angle);
-        fluxW.ubar_1(CW) = fluxWind.ubar;      % Lower Sonic Mean U
-        fluxW.wbar_1(CW) = fluxWind.wbar;      % Lower Sonic Mean W
-        fluxW.uu_1(CW) = fluxWind.uu;          % Lower Sonic Variance from mean u
-        fluxW.vv_1(CW) = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
-        fluxW.ww_1(CW) = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
-        fluxW.u3_1(CW) = fluxWind.u3;          % Lower Sonic moment of u
-        fluxW.v3_1(CW) = fluxWind.v3;          % Lower Sonic moment of v
-        fluxW.w3_1(CW) = fluxWind.w3;          % Lower Sonic moment of w
-        fluxW.uw_1(CW) = fluxWind.uw;          % Lower Sonic mean of (w.*un)
-        fluxW.vw_1(CW) = fluxWind.vw;          % Lower Sonic mean of (w.*v)
-        fluxW.ustar_1(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
-        fluxW.WD_1(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
-        fluxW.WDz_1(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
-        fluxW.Sonic_Tmp_1(CW) = nanmean( DespikeW.RMY_Tmp(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
-        fluxW.WD_1_degN = mod(fluxW.WD_1*180/pi,360);
-    end
+Good_Data_T_W = find( ~isnan( DespikeW.CSAT_Tmp( CFV )) & ~isnan( DespikeW.CSAT_W( CFV )));
+pct_good=length(Good_Data_T_W) > 0.5 * NFavg;
+fprintf('Wind rejection based on %d\n',length(Good_Data_T_W));
+if length(Good_Data_T_W) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
+    [fluxWind, ~, ~, w_1, alfa, theta] = ...
+        WindData( DespikeW.CSAT_U(CFV), DespikeW.CSAT_V(CFV), DespikeW.CSAT_W(CFV),'CSAT', MagneticCorrection, CSAT_angle);
+
+    % Wind measurments for Lower Sonic
+    fluxW.ubar_1(CW) = fluxWind.ubar;      % Lower Sonic Mean U
+    fluxW.wbar_1(CW) = fluxWind.wbar;      % Lower Sonic Mean W
+    fluxW.uu_1(CW) = fluxWind.uu;          % Lower Sonic Variance from mean u
+    fluxW.vv_1(CW) = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
+    fluxW.ww_1(CW) = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
+    fluxW.u3_1(CW) = fluxWind.u3;          % Lower Sonic moment of u
+    fluxW.v3_1(CW) = fluxWind.v3;          % Lower Sonic moment of v
+    fluxW.w3_1(CW) = fluxWind.w3;          % Lower Sonic moment of w
+    fluxW.uw_1(CW) = fluxWind.uw;          % Lower Sonic mean of (w.*un)
+    fluxW.vw_1(CW) = fluxWind.vw;          % Lower Sonic mean of (w.*v)
+    fluxW.ustar_1(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
+    fluxW.WD_1(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
+    fluxW.WDz_1(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
+    fluxW.Sonic_Tmp_1(CW) = nanmean( DespikeW.CSAT_Tmp(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
+    fluxW.WD_1_degN = mod(fluxW.WD_1*180/pi,360);
 end
+% elseif strcmp(lower_son,'RMY') % lower_son==RMY
+%     Good_Data_T_W_RMY = find( ~isnan( DespikeW.RMY_Tmp( CFV )) & ~isnan( DespikeW.RMY_W( CFV )));
+%     
+%     if length(Good_Data_T_W_RMY) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
+%         
+%         [fluxWind, ~, ~, w_1, alfa, theta] = ...
+%             WindData( DespikeW.RMY_U(CFV), DespikeW.RMY_V(CFV), DespikeW.RMY_W(CFV),'RMY', MagneticCorrection, RMY_angle);
+%         fluxW.ubar_1(CW) = fluxWind.ubar;      % Lower Sonic Mean U
+%         fluxW.wbar_1(CW) = fluxWind.wbar;      % Lower Sonic Mean W
+%         fluxW.uu_1(CW) = fluxWind.uu;          % Lower Sonic Variance from mean u
+%         fluxW.vv_1(CW) = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
+%         fluxW.ww_1(CW) = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
+%         fluxW.u3_1(CW) = fluxWind.u3;          % Lower Sonic moment of u
+%         fluxW.v3_1(CW) = fluxWind.v3;          % Lower Sonic moment of v
+%         fluxW.w3_1(CW) = fluxWind.w3;          % Lower Sonic moment of w
+%         fluxW.uw_1(CW) = fluxWind.uw;          % Lower Sonic mean of (w.*un)
+%         fluxW.vw_1(CW) = fluxWind.vw;          % Lower Sonic mean of (w.*v)
+%         fluxW.ustar_1(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
+%         fluxW.WD_1(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
+%         fluxW.WDz_1(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
+%         fluxW.Sonic_Tmp_1(CW) = nanmean( DespikeW.RMY_Tmp(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
+%         fluxW.WD_1_degN = mod(fluxW.WD_1*180/pi,360);
+%     end
 
 
 %%
 %Backup anemometer processing
-Good_Data_T_W = find( ~isnan( DespikeW.CSAT_Tmp2( CFV )) & ~isnan( DespikeW.CSAT_W( CFV )));
-
-if length(Good_Data_T_W) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
-
-    [fluxWind, ~, ~, w_3, alfa, theta] = ...
-        WindData( DespikeW.CSAT_U2(CFV), DespikeW.CSAT_V2(CFV), DespikeW.CSAT_W2(CFV),'CSAT', MagneticCorrection, CSAT_angle);
-
-    % Wind measurments for Lower Sonic
-    fluxW.ubar_3(CW)  = fluxWind.ubar;      % Lower Sonic Mean U
-    fluxW.wbar_3(CW)  = fluxWind.wbar;      % Lower Sonic Mean W
-    fluxW.uu_3(CW)    = fluxWind.uu;          % Lower Sonic Variance from mean u
-    fluxW.vv_3(CW)    = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
-    fluxW.ww_3(CW)    = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
-    fluxW.u3_3(CW)    = fluxWind.u3;          % Lower Sonic moment of u
-    fluxW.v3_3(CW)    = fluxWind.v3;          % Lower Sonic moment of v
-    fluxW.w3_3(CW)    = fluxWind.w3;          % Lower Sonic moment of w
-    fluxW.uw_3(CW)    = fluxWind.uw;          % Lower Sonic mean of (w.*un)
-    fluxW.vw_3(CW)    = fluxWind.vw;          % Lower Sonic mean of (w.*v)
-    fluxW.ustar_3(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
-    fluxW.WD_3(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
-    fluxW.WDz_3(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
-    fluxW.Sonic_Tmp_3(CW) = nanmean( DespikeW.CSAT_Tmp2(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
-    fluxW.WD_3_degN = mod(fluxW.WD_3*180/pi,360);
-else
-    w_3 = nan(length(CFV),1);
-end
+% Good_Data_T_W = find( ~isnan( DespikeW.CSAT_Tmp2( CFV )) & ~isnan( DespikeW.CSAT_W( CFV )));
+% 
+% if length(Good_Data_T_W) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
+% 
+%     [fluxWind, ~, ~, w_3, alfa, theta] = ...
+%         WindData( DespikeW.CSAT_U2(CFV), DespikeW.CSAT_V2(CFV), DespikeW.CSAT_W2(CFV),'CSAT', MagneticCorrection, CSAT_angle);
+% 
+%     % Wind measurments for Lower Sonic
+%     fluxW.ubar_3(CW)  = fluxWind.ubar;      % Lower Sonic Mean U
+%     fluxW.wbar_3(CW)  = fluxWind.wbar;      % Lower Sonic Mean W
+%     fluxW.uu_3(CW)    = fluxWind.uu;          % Lower Sonic Variance from mean u
+%     fluxW.vv_3(CW)    = fluxWind.vv;          % Lower Sonic Variance from mean v (After rotation mean u = 0)
+%     fluxW.ww_3(CW)    = fluxWind.ww;          % Lower Sonic Variance from mean w (After rotation mean w = 0)
+%     fluxW.u3_3(CW)    = fluxWind.u3;          % Lower Sonic moment of u
+%     fluxW.v3_3(CW)    = fluxWind.v3;          % Lower Sonic moment of v
+%     fluxW.w3_3(CW)    = fluxWind.w3;          % Lower Sonic moment of w
+%     fluxW.uw_3(CW)    = fluxWind.uw;          % Lower Sonic mean of (w.*un)
+%     fluxW.vw_3(CW)    = fluxWind.vw;          % Lower Sonic mean of (w.*v)
+%     fluxW.ustar_3(CW) = fluxWind.ustar;    % Lower Sonic U star = (fluxW.uw^2+fluxW.vw^2)^0.25
+%     fluxW.WD_3(CW)    = theta;      % Lower Sonic theta. calculated in RotateWind3D
+%     fluxW.WDz_3(CW)   = alfa;       % Lower Sonic alpha. Vertical rotation angle . Calculated in RotateWind3D
+%     fluxW.Sonic_Tmp_3(CW) = nanmean( DespikeW.CSAT_Tmp2(CFV)); % Lower Sonic Mean Sonic temp [Deg C]
+%     fluxW.WD_3_degN = mod(fluxW.WD_3*180/pi,360);
+% else
+%     w_3 = nan(length(CFV),1);
+% end
 
 %%
 %DS2
@@ -176,68 +181,68 @@ CSATubar = sqrt(DespikeW.CSAT_U(CFV).^2 + DespikeW.CSAT_V(CFV).^2);
 fluxW.CSAT_gust1(CW) = max(CSATubar);
 fluxW.CSAT_gust2(CW) = prctile(CSATubar,90);
 fluxW.CSAT_gust3(CW) = max(moving(CSATubar,10));
-fluxW.DS2_u(CW) = nanmean(W1min.DS2_ubar(CSV));
-DS2_u=nanmean(W1min.DS2_u(CSV));
-DS2_v=nanmean(W1min.DS2_v(CSV));
-fluxW.DS2_dir(CW) = mod(180/pi*atan2(DS2_v,DS2_u)+360,360);
-fluxW.DS2_gust(CW) = nanmean(W1min.DS2_gust(CSV));
+% fluxW.DS2_u(CW) = nanmean(W1min.DS2_ubar(CSV));
+% DS2_u=nanmean(W1min.DS2_u(CSV));
+% DS2_v=nanmean(W1min.DS2_v(CSV));
+% fluxW.DS2_dir(CW) = mod(180/pi*atan2(DS2_v,DS2_u)+360,360);
+% fluxW.DS2_gust(CW) = nanmean(W1min.DS2_gust(CSV));
 
 %%
 %Met data
 % Data from CO2 sensors
-fluxW.CO2_1(CW) = nanmean(W1min.C1(CSV));			% Mean CO2 concentration at lower CO2 sensor
-fluxW.CO2_2(CW) = nanmean(W1min.C2(CSV));                       % Mean CO2 concentration at mid CO2 sensor
-fluxW.CO2_3(CW) = nanmean(W1min.C3(CSV));                       % Mean CO2 concentration at upper CO2 sensor
+% fluxW.CO2_1(CW) = nanmean(W1min.C1(CSV));			% Mean CO2 concentration at lower CO2 sensor
+% fluxW.CO2_2(CW) = nanmean(W1min.C2(CSV));                       % Mean CO2 concentration at mid CO2 sensor
+% fluxW.CO2_3(CW) = nanmean(W1min.C3(CSV));                       % Mean CO2 concentration at upper CO2 sensor
 
 
 % Data from BF5
-fluxW.Total_PAR(CW)  = nanmean(W1min.Total_PAR(CSV));             % Mean Total PAR [mV]
-fluxW.Diffuse_PAR(CW)  =  nanmean(W1min.Diffuse_PAR(CSV));        % Direct/diffuse PAR sensor - Total PAR [mV]
+% fluxW.Total_PAR(CW)  = nanmean(W1min.Total_PAR(CSV));             % Mean Total PAR [mV]
+% fluxW.Diffuse_PAR(CW)  =  nanmean(W1min.Diffuse_PAR(CSV));        % Direct/diffuse PAR sensor - Total PAR [mV]
 
 % Data from Soil temp probes
-fluxW.STat8cmOW_W1 (CW) = nanmean(W1min.STat8cmOW_W1(CSV));
-fluxW.STat25cmOW_W1 (CW) = nanmean(W1min.STat25cmOW_W1(CSV));
-fluxW.STat8cmOWr_W1 (CW) = nanmean(W1min.STat8cmOWr_W1(CSV));
-fluxW.STat8cmIM_W1 (CW) = nanmean(W1min.STat8cmIM_W1(CSV));
-fluxW.STat25cmIM_W1 (CW) = nanmean(W1min.STat25cmIM_W1(CSV));
-fluxW.STat8cmIMr_W1 (CW) = nanmean(W1min.STat8cmIMr_W1(CSV));
-fluxW.STat8cmUL_W1 (CW) = nanmean(W1min.STat8cmUL_W1(CSV));
-fluxW.STat8cmOW_W2 (CW) = nanmean(W1min.STat8cmOW_W1(CSV));
-fluxW.STat25cmOW_W2 (CW) = nanmean(W1min.STat25cmOW_W2(CSV));
-fluxW.STat8cmOWr_W2 (CW) = nanmean(W1min.STat8cmOWr_W2(CSV));
-fluxW.STat8cmIM_W2 (CW) = nanmean(W1min.STat8cmIM_W2(CSV));
-fluxW.STat25cmIM_W2 (CW) = nanmean(W1min.STat25cmIM_W2(CSV));
-fluxW.STat8cmIMr_W2 (CW) = nanmean(W1min.STat8cmIMr_W2(CSV));
-fluxW.STat8cmUL_W2 (CW) = nanmean(W1min.STat8cmUL_W2(CSV));
+% fluxW.STat8cmOW_W1 (CW) = nanmean(W1min.STat8cmOW_W1(CSV));
+% fluxW.STat25cmOW_W1 (CW) = nanmean(W1min.STat25cmOW_W1(CSV));
+% fluxW.STat8cmOWr_W1 (CW) = nanmean(W1min.STat8cmOWr_W1(CSV));
+% fluxW.STat8cmIM_W1 (CW) = nanmean(W1min.STat8cmIM_W1(CSV));
+% fluxW.STat25cmIM_W1 (CW) = nanmean(W1min.STat25cmIM_W1(CSV));
+% fluxW.STat8cmIMr_W1 (CW) = nanmean(W1min.STat8cmIMr_W1(CSV));
+% fluxW.STat8cmUL_W1 (CW) = nanmean(W1min.STat8cmUL_W1(CSV));
+% fluxW.STat8cmOW_W2 (CW) = nanmean(W1min.STat8cmOW_W1(CSV));
+% fluxW.STat25cmOW_W2 (CW) = nanmean(W1min.STat25cmOW_W2(CSV));
+% fluxW.STat8cmOWr_W2 (CW) = nanmean(W1min.STat8cmOWr_W2(CSV));
+% fluxW.STat8cmIM_W2 (CW) = nanmean(W1min.STat8cmIM_W2(CSV));
+% fluxW.STat25cmIM_W2 (CW) = nanmean(W1min.STat25cmIM_W2(CSV));
+% fluxW.STat8cmIMr_W2 (CW) = nanmean(W1min.STat8cmIMr_W2(CSV));
+% fluxW.STat8cmUL_W2 (CW) = nanmean(W1min.STat8cmUL_W2(CSV));
 
 %%
 %WXT data
-X = -W1min.WS_bar.*sin(W1min.WD_bar*pi/180);
-Y = -W1min.WS_bar.*cos(W1min.WD_bar*pi/180);
-
-X=nanmean(X(CSV));
-Y=nanmean(Y(CSV));
-
-fluxW.WD_slow (CW)    = mod(180/pi*atan2(Y,X)+90,360);
-fluxW.WS_slow (CW)    = sqrt(X.^2 + Y.^2);
-
-fluxW.tair_2  (CW)    = nanmean(W1min.tair_2(CSV));
-fluxW.rH_2  (CW)      = nanmean(W1min.rH_2(CSV));
-fluxW.pres_2  (CW)    = nanmean(W1min.pres(CSV));
-fluxW.rain_accum(CW)  = W1min.rain_accum(CSV(end))-W1min.rain_accum(CSV(1));
-fluxW.rain_dur (CW)   = W1min.rain_dur(CSV(end))-W1min.rain_dur(CSV(1));
-fluxW.rain_intens(CW) = W1min.rain_intens(CSV(end)) - W1min.rain_intens(CSV(1));
+% X = -W1min.WS_bar.*sin(W1min.WD_bar*pi/180);
+% Y = -W1min.WS_bar.*cos(W1min.WD_bar*pi/180);
+% 
+% X=nanmean(X(CSV));
+% Y=nanmean(Y(CSV));
+% 
+% fluxW.WD_slow (CW)    = mod(180/pi*atan2(Y,X)+90,360);
+% fluxW.WS_slow (CW)    = sqrt(X.^2 + Y.^2);
+% 
+% fluxW.tair_2  (CW)    = nanmean(W1min.tair_2(CSV));
+% fluxW.rH_2  (CW)      = nanmean(W1min.rH_2(CSV));
+% fluxW.pres_2  (CW)    = nanmean(W1min.pres(CSV));
+% fluxW.rain_accum(CW)  = W1min.rain_accum(CSV(end))-W1min.rain_accum(CSV(1));
+% fluxW.rain_dur (CW)   = W1min.rain_dur(CSV(end))-W1min.rain_dur(CSV(1));
+% fluxW.rain_intens(CW) = W1min.rain_intens(CSV(end)) - W1min.rain_intens(CSV(1));
 
 %%
 %%% T Air
-fluxW.tair(CW) = nanmean( W1min.Tm( CSV ));         % HMP45C mean air temp [Deg C]
-% Defalt for temperature measurement
-if isnan(fluxW.tair(CW))
-    fluxW.tair(CW)=fluxW.Sonic_Tmp_1(CW);           % Default to CSAT temp if HMP45C temp is missing
-    if isnan(fluxW.tair(CW))
-        fluxW.tair(CW)=fluxW.Sonic_Tmp_2(CW);           % Default to RMY temp if CSAT temp is missing
-    end
-end
+% fluxW.tair(CW) = nanmean( W1min.Tm( CSV ));         % HMP45C mean air temp [Deg C]
+% % Defalt for temperature measurement
+% if isnan(fluxW.tair(CW))
+%     fluxW.tair(CW)=fluxW.Sonic_Tmp_1(CW);           % Default to CSAT temp if HMP45C temp is missing
+%     if isnan(fluxW.tair(CW))
+%         fluxW.tair(CW)=fluxW.Sonic_Tmp_2(CW);           % Default to RMY temp if CSAT temp is missing
+%     end
+% end
 
 %%% Vapor Pressure - Mean of LI7500 Vapor Pressure [Pa]
 if sum( ~isnan( DespikeW.LI7500_Q( CFV )))>0.5 * NFavg
@@ -245,31 +250,31 @@ if sum( ~isnan( DespikeW.LI7500_Q( CFV )))>0.5 * NFavg
 end
 
 %%% Saturated Vapor Pressure - Mean of Saturation Vapor Pressure [Pa]
-fluxW.p_vaporSat_bar( CW ) = nanmean(W1min.Pvaporsat(CSV));
-if isnan(fluxW.p_vaporSat_bar( CW )) % Retries with a possibly updated temperature value [Pa]
-    fluxW.p_vaporSat_bar(CW) = 611.2*exp(17.67*fluxW.tair(CW)/(243.51+fluxW.tair(CW)));
-end
+% fluxW.p_vaporSat_bar( CW ) = nanmean(W1min.Pvaporsat(CSV));
+% if isnan(fluxW.p_vaporSat_bar( CW )) % Retries with a possibly updated temperature value [Pa]
+%     fluxW.p_vaporSat_bar(CW) = 611.2*exp(17.67*fluxW.tair(CW)/(243.51+fluxW.tair(CW)));
+% end
 
 %%% Vapor Pressure - Mean of Vapor Pressure [Pa]
-fluxW.p_vapor_bar( CW ) = nanmean(W1min.Pvapor(CSV));
-if isnan(fluxW.p_vapor_bar( CW ))
-    % fluxW.p_vapor_bar( CW )=nanmean(DespikeW.LI7500_Q(CFV)/1000)*R_g*(fluxW.tair(CW)+273.16);
-    % From ideal gas law. Output in [Pa]
-    fluxW.p_vapor_bar( CW )=fluxW.e(CW);
-    if fluxW.p_vapor_bar( CW )>fluxW.p_vaporSat_bar( CW )
-        fluxW.p_vapor_bar( CW )=fluxW.p_vaporSat_bar( CW );
-    end
-end
+% fluxW.p_vapor_bar( CW ) = nanmean(W1min.Pvapor(CSV));
+% if isnan(fluxW.p_vapor_bar( CW ))
+%     % fluxW.p_vapor_bar( CW )=nanmean(DespikeW.LI7500_Q(CFV)/1000)*R_g*(fluxW.tair(CW)+273.16);
+%     % From ideal gas law. Output in [Pa]
+%     fluxW.p_vapor_bar( CW )=fluxW.e(CW);
+%     if fluxW.p_vapor_bar( CW )>fluxW.p_vaporSat_bar( CW )
+%         fluxW.p_vapor_bar( CW )=fluxW.p_vaporSat_bar( CW );
+%     end
+% end
 
 %%% Relative Humidity
-fluxW.humbar(CW) = nanmean( W1min.Hum( CSV ));                  % HMP45C mean of hummidity [%]
-if isnan(fluxW.humbar(CW))
-    fluxW.humbar(CW)=fluxW.p_vapor_bar( CW )/fluxW.p_vaporSat_bar( CW )*100;
-    %Comes in over 100% sometimes
-    if fluxW.humbar(CW)>100 && fluxW.humbar(CW)<110
-        fluxW.humbar(CW)=100;
-    end
-end
+% fluxW.humbar(CW) = nanmean( W1min.Hum( CSV ));                  % HMP45C mean of hummidity [%]
+% if isnan(fluxW.humbar(CW))
+%     fluxW.humbar(CW)=fluxW.p_vapor_bar( CW )/fluxW.p_vaporSat_bar( CW )*100;
+%     %Comes in over 100% sometimes
+%     if fluxW.humbar(CW)>100 && fluxW.humbar(CW)<110
+%         fluxW.humbar(CW)=100;
+%     end
+% end
 
 %%% Atmospheric Pressure
 fluxW.pressure( CW ) = nanmean( DespikeW.LI7500_P( CFV ));      % LI7500 Pressure [Pa]
@@ -291,26 +296,26 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fluxW.r(CW) = 0.622 * fluxW.p_vapor_bar( CW )/( fluxW.pressure( CW ) - fluxW.p_vapor_bar( CW )); % HMP45C & LI7500 Mixing ratio [unitless]
-
-% Virtual temperature of a moist air parcel is the temperature at which a theoretical dry air parcel would have a total pressure and density equal to the moist parcel of air.
-fluxW.tvair(CW) = fluxW.tair( CW ) * ( 1 + 0.61*fluxW.r(CW));  % HMP45C & LI7500 mean of virtual air temp [Deg C]
-
-fluxW.rho_dry_air(CW)=fluxW.pressure(CW)/R_d/(fluxW.tair(CW)+273.15); % Dry Air density [kg/m^3]
-% Rd = Specific gas constant for dry air, 287.058 J/(kg·K)
-fluxW.rho_moist_air(CW)=(fluxW.pressure(CW)-0.3780*fluxW.p_vapor_bar(CW))/R_d/(fluxW.tair(CW)+273.15); % Moist air density [kg/m^3]
+% fluxW.r(CW) = 0.622 * fluxW.p_vapor_bar( CW )/( fluxW.pressure( CW ) - fluxW.p_vapor_bar( CW )); % HMP45C & LI7500 Mixing ratio [unitless]
+% 
+% % Virtual temperature of a moist air parcel is the temperature at which a theoretical dry air parcel would have a total pressure and density equal to the moist parcel of air.
+% fluxW.tvair(CW) = fluxW.tair( CW ) * ( 1 + 0.61*fluxW.r(CW));  % HMP45C & LI7500 mean of virtual air temp [Deg C]
+% 
+% fluxW.rho_dry_air(CW)=fluxW.pressure(CW)/R_d/(fluxW.tair(CW)+273.15); % Dry Air density [kg/m^3]
+% % Rd = Specific gas constant for dry air, 287.058 J/(kg·K)
+% fluxW.rho_moist_air(CW)=(fluxW.pressure(CW)-0.3780*fluxW.p_vapor_bar(CW))/R_d/(fluxW.tair(CW)+273.15); % Moist air density [kg/m^3]
 % Rv = Specific gas constant for water vapor, 461.495 J/(kg·K)
 
-fluxW.SWinbar(CW) = nanmean(W1min.SWUp(CSV));    % NR01 mean Short wave down radiation
-fluxW.SWoutbar(CW) = nanmean(W1min.SWDown(CSV));     % NR01 mean Short wave up radiation
-fluxW.LWinbar(CW) = nanmean(W1min.IRUp(CSV));    % NR01 mean Long wave down radiation
-fluxW.LWoutbar(CW) = nanmean(W1min.IRDown(CSV));     % NR01 mean Long wave up radiation
-fluxW.NetRs(CW) = nanmean(W1min.NetRs(CSV));       % NR01 mean Short wave net radiation
-fluxW.NetRl(CW)= nanmean(W1min.NetRl(CSV));        % NR01 mean Long wave net radiation
-fluxW.Albedo(CW)= nanmean(W1min.Albedo(CSV));      % NR01 mean albedo
-fluxW.UpTot(CW)= nanmean(W1min.UpTot(CSV));        % NR01 mean Total up radiation
-fluxW.DownTot(CW)= nanmean(W1min.DownTot(CSV));    % NR01 mean Total down radiation
-fluxW.NetRad(CW)= nanmean(W1min.NetRad(CSV));      % NR01 mean Total radiation
+% fluxW.SWinbar(CW) = nanmean(W1min.SWUp(CSV));    % NR01 mean Short wave down radiation
+% fluxW.SWoutbar(CW) = nanmean(W1min.SWDown(CSV));     % NR01 mean Short wave up radiation
+% fluxW.LWinbar(CW) = nanmean(W1min.IRUp(CSV));    % NR01 mean Long wave down radiation
+% fluxW.LWoutbar(CW) = nanmean(W1min.IRDown(CSV));     % NR01 mean Long wave up radiation
+% fluxW.NetRs(CW) = nanmean(W1min.NetRs(CSV));       % NR01 mean Short wave net radiation
+% fluxW.NetRl(CW)= nanmean(W1min.NetRl(CSV));        % NR01 mean Long wave net radiation
+% fluxW.Albedo(CW)= nanmean(W1min.Albedo(CSV));      % NR01 mean albedo
+% fluxW.UpTot(CW)= nanmean(W1min.UpTot(CSV));        % NR01 mean Total up radiation
+% fluxW.DownTot(CW)= nanmean(W1min.DownTot(CSV));    % NR01 mean Total down radiation
+% fluxW.NetRad(CW)= nanmean(W1min.NetRad(CSV));      % NR01 mean Total radiation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -325,6 +330,8 @@ else
 end
 [Tr_2] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q(CFV), DespikeW.RMY_Tmp(CFV), LI7500);  % RMY & LI7500
 Tson_2 = DespikeW.RMY_Tmp(CFV);
+
+fluxW.tair(CW)=nanmean(Tr_1);
 
 if isfield(DespikeW,'CSAT_Tmp3')
     [Tr_3] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q3(CFV), DespikeW.CSAT_Tmp3(CFV), EC150);  % CSAT & LI7500
@@ -343,24 +350,24 @@ if ~isnan( fluxW.ustar_1(CW) )
     ubar = fluxW.ubar_1(CW);
     Sdist_LI7500 = Sdist_LI7500init;
     Sdist_LI7700 = Sdist_LI7700init;
-elseif strcmp(upper_son,'RMY') 
-    fluxW.ustar(CW) = fluxW.ustar_2(CW);
-    w = w_2;
-    Tr = Tr_2;
-    Tson = Tson_2;
-    Tson_mean = fluxW.Sonic_Tmp_2(CW);
-    ubar = fluxW.ubar_2(CW);
-    Sdist_LI7500 = Sdist_LI7500init+2;
-    Sdist_LI7700 = Sdist_LI7700init+1.6;
-elseif isfield(fluxW,'ustar_3')
-    fluxW.ustar(CW) = fluxW.ustar_3(CW);
-    w = w_3;
-    Tr = Tr_3;
-    Tson = Tson_3;
-    Tson_mean = fluxW.Sonic_Tmp_3(CW);
-    ubar = fluxW.ubar_3(CW);
-%     Sdist_LI7500 = Sdist_LI7500init+3;
-    Sdist_LI7700 = Sdist_LI7700init+3;
+% elseif strcmp(upper_son,'RMY') 
+%     fluxW.ustar(CW) = fluxW.ustar_2(CW);
+%     w = w_2;
+%     Tr = Tr_2;
+%     Tson = Tson_2;
+%     Tson_mean = fluxW.Sonic_Tmp_2(CW);
+%     ubar = fluxW.ubar_2(CW);
+%     Sdist_LI7500 = Sdist_LI7500init+2;
+%     Sdist_LI7700 = Sdist_LI7700init+1.6;
+% elseif isfield(fluxW,'ustar_3')
+%     fluxW.ustar(CW) = fluxW.ustar_3(CW);
+%     w = w_3;
+%     Tr = Tr_3;
+%     Tson = Tson_3;
+%     Tson_mean = fluxW.Sonic_Tmp_3(CW);
+%     ubar = fluxW.ubar_3(CW);
+% %     Sdist_LI7500 = Sdist_LI7500init+3;
+%     Sdist_LI7700 = Sdist_LI7700init+3;
 else
     Tr = nan(NFavg,1);
     w = nan(NFavg,1);
@@ -371,16 +378,16 @@ else
     Tson_mean = nan;
 end
 
-fluxW.Tr3(CW)  = nanmoment( Tr, 3 );    % Sonic & LI7500 Real Temperature moment
-fluxW.Tr_bar(CW) = nanmean( Tr ) ;      % Sonic & LI7500 Real Temperature
-fluxW.tt( CW ) = nanvar( Tr);           % Sonic & LI7500 Variance of Tr = Real Temp (after KaimalGaynor)
-
-fluxW.rho_cp(CW) = calculate_rho_cp(fluxW.tair(CW) ,fluxW.pressure( CW ),fluxW.p_vapor_bar( CW ),fluxW.p_vaporSat_bar( CW ));
-fluxW.wtsonic(CW) = nanmean((Tson - Tson_mean).*w);
-fluxW.wts(CW) = nanmean(( Tr - fluxW.Tr_bar(CW) ).*w);    % Sonic & LI7500 Temperature flux
-fluxW.L(CW)= -(fluxW.ustar(CW)^3) / (0.4*9.81*( fluxW.wts(CW) / (fluxW.tair(CW)+273.15)));    % Sonic & LI7500 & HMP45C Obukov lengh
-
-fluxW.H(CW) = fluxW.wts(CW).* fluxW.rho_cp(CW) ; % Sonic & LI7500 & HMP45C sensible Heat flux [W/m2]
+% fluxW.Tr3(CW)  = nanmoment( Tr, 3 );    % Sonic & LI7500 Real Temperature moment
+% fluxW.Tr_bar(CW) = nanmean( Tr ) ;      % Sonic & LI7500 Real Temperature
+% fluxW.tt( CW ) = nanvar( Tr);           % Sonic & LI7500 Variance of Tr = Real Temp (after KaimalGaynor)
+% 
+% fluxW.rho_cp(CW) = calculate_rho_cp(fluxW.tair(CW) ,fluxW.pressure( CW ),fluxW.p_vapor_bar( CW ),fluxW.p_vaporSat_bar( CW ));
+% fluxW.wtsonic(CW) = nanmean((Tson - Tson_mean).*w);
+% fluxW.wts(CW) = nanmean(( Tr - fluxW.Tr_bar(CW) ).*w);    % Sonic & LI7500 Temperature flux
+% fluxW.L(CW)= -(fluxW.ustar(CW)^3) / (0.4*9.81*( fluxW.wts(CW) / (fluxW.tair(CW)+273.15)));    % Sonic & LI7500 & HMP45C Obukov lengh
+% 
+% fluxW.H(CW) = fluxW.wts(CW).* fluxW.rho_cp(CW) ; % Sonic & LI7500 & HMP45C sensible Heat flux [W/m2]
 %%
 % --SCALARS--------------------------------
 wsc=(w-nanmean(w))/nanstd(w);
@@ -388,7 +395,7 @@ wsc(isnan(wsc))=0;
 
 fluxW.Spectral_correctionLI7500(CW) = opirgafreq(ubar,Sonic_pathLength,Sonic_Height,AVGtime,(Sonic_Height-dispH)/fluxW.L(CW),LI7500path,LI7500dia);
 fluxW.Spectral_correctionLI7700(CW) = opirgafreq(ubar,Sonic_pathLength,Sonic_Height,AVGtime,(Sonic_Height-dispH)/fluxW.L(CW),LI7700path,LI7700dia);
-fluxW.Spectral_correctionEC150(CW) = opirgafreq(ubar,Sonic_pathLength,Sonic_Height,AVGtime,(Sonic_Height-dispH)/fluxW.L(CW),EC150path,EC150dia);
+% fluxW.Spectral_correctionEC150(CW) = opirgafreq(ubar,Sonic_pathLength,Sonic_Height,AVGtime,(Sonic_Height-dispH)/fluxW.L(CW),EC150path,EC150dia);
 %%
 % LI7500 : CO2 & H2O
 Good_Data_CO2_H20 = find( ~isnan( DespikeW.LI7500_Q( CFV )) & ~isnan( DespikeW.LI7500_C( CFV )) & ~isnan( w ));
@@ -505,78 +512,78 @@ end % if Good_Data_CO2_H2O
 %%
 %Extra flux station calculations
 % LI7500 : CO2 & H2O
-if isfield(DespikeW,'LI7500_C2');
-wsc_3=(w_3-nanmean(w_3))/nanstd(w_3);
-wsc_3(isnan(wsc_3))=0;
-
-Good_Data_CO2_H20_3 = find( ~isnan( DespikeW.LI7500_Q2( CFV )) & ~isnan( DespikeW.LI7500_C2( CFV )) & ~isnan( w_3 ));
-
-if length( Good_Data_CO2_H20_3 ) > 0.5 * NFavg
+% if isfield(DespikeW,'LI7500_C2');
+% wsc_3=(w_3-nanmean(w_3))/nanstd(w_3);
+% wsc_3(isnan(wsc_3))=0;
+% 
+% Good_Data_CO2_H20_3 = find( ~isnan( DespikeW.LI7500_Q2( CFV )) & ~isnan( DespikeW.LI7500_C2( CFV )) & ~isnan( w_3 ));
+% 
+% if length( Good_Data_CO2_H20_3 ) > 0.5 * NFavg
     
     % find lag time between LI7500 and Sonic
     
-    Q_3=DespikeW.LI7500_Q2(CFV);
-    Qsc_3=(Q_3-nanmean(Q_3))/nanstd(Q_3);
-    Qsc_3(isnan(Q_3))=0;
-    C_3=DespikeW.LI7500_C2(CFV);
-    Csc_3=(C_3-nanmean(C_3))/nanstd(C_3);
-    Csc_3(isnan(C_3))=0;
+%     Q_3=DespikeW.LI7500_Q2(CFV);
+%     Qsc_3=(Q_3-nanmean(Q_3))/nanstd(Q_3);
+%     Qsc_3(isnan(Q_3))=0;
+%     C_3=DespikeW.LI7500_C2(CFV);
+%     Csc_3=(C_3-nanmean(C_3))/nanstd(C_3);
+%     Csc_3(isnan(C_3))=0;
+%     
+%     fluxW.lagq3( CW ) = lag_test( wsc_3, Qsc_3, LI7500, Sdist_LI7500, ubar, freqF);   % Calculate lag between CO2 and Wind
+%     fluxW.lagc3( CW ) = lag_test( wsc_3, Csc_3, LI7500, Sdist_LI7500, ubar, freqF);   % Calculate lag between H2O and Wind
+%     
+%     %                 if abs(fluxW.lagq(CW)-fluxW.lagc(CW))>max_lag_diff_LI7500
+%     C_3 = nan( NFavg , 1 ) ;
+%     Q_3 = nan( NFavg , 1 ) ;
+%     % Calculate indices for vector shift CO2 & H2O
+%     % nw = number of windows per file [number/file]
+%     % ntsf =  # of timesteps per file - fast data
+%     [V_lag_1, V_lag_end , V_1 , V_end] = Lag_Shift_index (fluxW.lagc3(CW) , concatenating_files , CW , ntsf/nw , nw );
+%     C_3( V_lag_1 : V_lag_end ) = DespikeW.LI7500_C2( V_1 : V_end );
+%     [V_lag_1, V_lag_end , V_1 , V_end] = Lag_Shift_index (fluxW.lagq3(CW) , concatenating_files , CW , ntsf/nw , nw );
+%     Q_3( V_lag_1 : V_lag_end ) = DespikeW.LI7500_Q2( V_1 : V_end );
+%     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     fluxW.Q3(CW) = nanmean(Q_3);
+%     fluxW.C3(CW) = nanmean(C_3);
+%     fluxW.wqraw3(CW) = nanmean((Q_3-fluxW.Q3(CW)).*w_3);
+%     
+%     % Aapply WPL correction on raw data. Error is caused by changes
+%     % in air volume deu to heat.
+%     %add condition regardind LI7700 isnan and if exist do wpl 4
+%     %both
+%     [~, qWPL3, cWPL3, ~] = WPL_correction_10Hz...
+%         ( Q_3, C_3,fluxW.tair(CW),Tson, DespikeW.LI7500_P2(CFV), nan, LI7500, DespikeW.LI7700_P(CFV) );
+%     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     
+%     
+%     % evaluete statistics
+%     
+%     fluxW.qbar3( CW ) = nanmean( qWPL3 ) ;   % Sonic & LI7500 mean of H2O concentration [kg/m^3]
+%     fluxW.cbar3( CW ) = nanmean( cWPL3 ) ;   % Sonic & LI7500 mean of CO2 concentration [kg/m^3]
+%     fluxW.qq3( CW ) = nanvar( qWPL3 );   % Sonic & LI7500 Variance of H2O concentration
+%     fluxW.cc3( CW ) = nanvar( cWPL3 );   % Sonic & LI7500 Variance of CO2 concentration
+%     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     fluxW.cbarmpm3_3( CW ) =  fluxW.cbar3( CW )*1000*1000/44.0095 ;   % Mean of CO2 concentration [mmol/m^3]
+%     fluxW.wq_3( CW ) = nanmean( w_3.*( qWPL3 - fluxW.qbar3( CW )) );%/fluxW.Spectral_correctionEC150(CW);   % H2O flux in :[kg/m2/s] (Water Vapor flux in : [kg/m2/s] units)
+%     fluxW.FH2O_3( CW )=fluxW.wq_3( CW )/(18.0153/1000)*1000; % [mmol/m2/s]
+%     % mol H2O = 18.0153 gr H2O     O=15.9994 [gr/mol] H=1.00794 [gr/mol]
+%     
+%     fluxW.LE_3( CW ) = fluxW.wq_3( CW )*2440000;	% --- (Latent Heat flux in : [W/m2] units)
+%     fluxW.wc_3( CW ) = nanmean( w_3.*( cWPL3 - fluxW.cbar3( CW )));%/fluxW.Spectral_correctionEC150(CW);   % CO2 flux in : [kg/m2/s] units
+%     fluxW.Fc_3( CW ) = fluxW.wc_3( CW )/(44.0095/1000)*1000000;  % CO2 flux in : [umol/m2/s] units
+%     % mol CO2 = 44.0095 gr CO2     C=12.0107 [gr/mol] O=15.9994 [gr/mol]
+%     
+%     fluxW.q3_3( CW ) = nanmoment(qWPL3,3); % moment( qWPL, 3 );    % Sonic & LI7500 Moment of H2O concentration
+%     fluxW.c3_3( CW ) = nanmoment(cWPL3,3); % moment( cWPL, 3 );    % Sonic & LI7500 Moment of CO2 concentration
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    fluxW.lagq3( CW ) = lag_test( wsc_3, Qsc_3, LI7500, Sdist_LI7500, ubar, freqF);   % Calculate lag between CO2 and Wind
-    fluxW.lagc3( CW ) = lag_test( wsc_3, Csc_3, LI7500, Sdist_LI7500, ubar, freqF);   % Calculate lag between H2O and Wind
-    
-    %                 if abs(fluxW.lagq(CW)-fluxW.lagc(CW))>max_lag_diff_LI7500
-    C_3 = nan( NFavg , 1 ) ;
-    Q_3 = nan( NFavg , 1 ) ;
-    % Calculate indices for vector shift CO2 & H2O
-    % nw = number of windows per file [number/file]
-    % ntsf =  # of timesteps per file - fast data
-    [V_lag_1, V_lag_end , V_1 , V_end] = Lag_Shift_index (fluxW.lagc3(CW) , concatenating_files , CW , ntsf/nw , nw );
-    C_3( V_lag_1 : V_lag_end ) = DespikeW.LI7500_C2( V_1 : V_end );
-    [V_lag_1, V_lag_end , V_1 , V_end] = Lag_Shift_index (fluxW.lagq3(CW) , concatenating_files , CW , ntsf/nw , nw );
-    Q_3( V_lag_1 : V_lag_end ) = DespikeW.LI7500_Q2( V_1 : V_end );
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fluxW.Q3(CW) = nanmean(Q_3);
-    fluxW.C3(CW) = nanmean(C_3);
-    fluxW.wqraw3(CW) = nanmean((Q_3-fluxW.Q3(CW)).*w_3);
-    
-    % Aapply WPL correction on raw data. Error is caused by changes
-    % in air volume deu to heat.
-    %add condition regardind LI7700 isnan and if exist do wpl 4
-    %both
-    [~, qWPL3, cWPL3, ~] = WPL_correction_10Hz...
-        ( Q_3, C_3,fluxW.tair(CW),Tson, DespikeW.LI7500_P2(CFV), nan, LI7500, DespikeW.LI7700_P(CFV) );
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    
-    % evaluete statistics
-    
-    fluxW.qbar3( CW ) = nanmean( qWPL3 ) ;   % Sonic & LI7500 mean of H2O concentration [kg/m^3]
-    fluxW.cbar3( CW ) = nanmean( cWPL3 ) ;   % Sonic & LI7500 mean of CO2 concentration [kg/m^3]
-    fluxW.qq3( CW ) = nanvar( qWPL3 );   % Sonic & LI7500 Variance of H2O concentration
-    fluxW.cc3( CW ) = nanvar( cWPL3 );   % Sonic & LI7500 Variance of CO2 concentration
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fluxW.cbarmpm3_3( CW ) =  fluxW.cbar3( CW )*1000*1000/44.0095 ;   % Mean of CO2 concentration [mmol/m^3]
-    fluxW.wq_3( CW ) = nanmean( w_3.*( qWPL3 - fluxW.qbar3( CW )) );%/fluxW.Spectral_correctionEC150(CW);   % H2O flux in :[kg/m2/s] (Water Vapor flux in : [kg/m2/s] units)
-    fluxW.FH2O_3( CW )=fluxW.wq_3( CW )/(18.0153/1000)*1000; % [mmol/m2/s]
-    % mol H2O = 18.0153 gr H2O     O=15.9994 [gr/mol] H=1.00794 [gr/mol]
-    
-    fluxW.LE_3( CW ) = fluxW.wq_3( CW )*2440000;	% --- (Latent Heat flux in : [W/m2] units)
-    fluxW.wc_3( CW ) = nanmean( w_3.*( cWPL3 - fluxW.cbar3( CW )));%/fluxW.Spectral_correctionEC150(CW);   % CO2 flux in : [kg/m2/s] units
-    fluxW.Fc_3( CW ) = fluxW.wc_3( CW )/(44.0095/1000)*1000000;  % CO2 flux in : [umol/m2/s] units
-    % mol CO2 = 44.0095 gr CO2     C=12.0107 [gr/mol] O=15.9994 [gr/mol]
-    
-    fluxW.q3_3( CW ) = nanmoment(qWPL3,3); % moment( qWPL, 3 );    % Sonic & LI7500 Moment of H2O concentration
-    fluxW.c3_3( CW ) = nanmoment(cWPL3,3); % moment( cWPL, 3 );    % Sonic & LI7500 Moment of CO2 concentration
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-else
+% else
     %sprintf ('Not enough good CO2 or H2O or wind data in window number %d ', CW )
-end % if Good_Data_CO2_H2O
-end
+%end % if Good_Data_CO2_H2O
+%end
 %%
 %Methane flux calculations
 
