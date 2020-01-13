@@ -38,7 +38,7 @@ readfromDAT=1;
 %%
 year=2019;
 % cd('C:\Users\vldavies\Documents\GitHub\2018_SolvayEddyCovarianceCode\DataProcessing\');
-cd('C:\Users\thmorin\Documents\Projects\SolvayTower\EC_code\DataProcessing\');
+cd('C:\Users\veron\Documents\GitHub\2018_SolvayEddyCovarianceCode\DataProcessing\');
 datadirectory =  '../SolvayRawData/';
 codedirectory =  '../PreProcessSubs/';
 savedir       = ['../Processed' num2str(year) '/'];
@@ -62,7 +62,7 @@ LI7500 = 1;                                                                % Inf
 LI7700 = 1;                                                                % Infra Red Gas Analizer Type : 1='Open', 2='Closed'(AF46m), 3='Closed'(FASET32m) VERY IMPORTANT
 
 %% this is where we are going to make the most edits (file set up for raw data)
-NhrsPfile = 1;                                                            % number of hours per file
+NhrsPfile = 24;                                                            % number of hours per file
 freqF = 10;                                                                % frequency of Fast data measurements [Hz]
 freqD = 1/10;                           
 AVGtime = 1800 ;                                                           % Averaging time for the data input file [sec] TQUEST: So this is 30 min intervals (no change)?
@@ -72,7 +72,7 @@ ntsf = NhrsPfile*60*60*freqF;                                              % # o
 % [1/sec] = [number/file]
 
 nw = floor(NhrsPfile*3600/AVGtime);                                        % number of windows per file [hrs/file] * [sec/hrs] * [1/sec] = [number/file]
-
+% nw=48;
 NFavg = ntsf*AVGtime/(NhrsPfile*3600);                                     % Number of fast values that are meaned into one value per window
 %% dont need to change
 % parameters of nanWinSlaughtererT(inVec,min_nans,window,num_wins)
@@ -134,10 +134,8 @@ for CD = 2:length(DOY_range) %changing 2 to 1
          tsDatOut=[tsDatOut;tsData];
          obs_time=[obs_time;datenum(raw_year,raw_month,raw_day,raw_hour,raw_minut,raw_secon)];
      end
-     
-     %% Filtering daily files
-     tens_of_sec = 864000; %number of tenths of a seconds in a day
-    %% make perfect structure for one day
+    %% Make perfect structure for one day
+    tens_of_sec = 864000; %number of tenths of a seconds in a day    
     date_skel=nan(tens_of_sec,6);
     date_skel(:,1)=fileyear;
     date_skel(:,2)=filemonth;
@@ -146,7 +144,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
     date_skel(:,5)= reshape(repmat(0:59,60*10,24),tens_of_sec,1);
     date_skel(:,6)= reshape(repmat(0:0.1:59.9,1,24*60),tens_of_sec,1);
     date_skel_num=datenum(date_skel);
-    
+    %% Filtering Data for daily files     
     [yn,whereat]=ismember(obs_time,date_skel_num);
     ts_filt=nan(tens_of_sec,size(tsDatOut,2));
     ts_filt(whereat(yn==1),:)=tsDatOut(yn==1,:);
@@ -211,14 +209,14 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         % Adjust column numbers from data including column numbers of diagnostics
         DespikeW.Time = Fdata(:,1); %changed from (:,1:3) TQUEST: what is this? 
         
-        [DespikeW.CSAT_U2, DespikeW.CSAT_UQA2]= DeSpike(Fdata(:, 4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Ux [m/s]
-        fluxW.CSAT_UQA2 = DataQA (DespikeW.CSAT_UQA2, NFavg);
-        [DespikeW.CSAT_V2, DespikeW.CSAT_VQA2] = DeSpike(Fdata(:,5),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3',Fdata(:,8)); % CSAT Uy [m/s]
-        fluxW.CSAT_VQA2 = DataQA (DespikeW.CSAT_VQA2, NFavg);
-        [DespikeW.CSAT_W2, DespikeW.CSAT_WQA2] = DeSpike(Fdata(:,6),2400,Dspk.HWSTD,Dspk.HWmn,Dspk.HWmx,Dspk.HWtpr,'CSAT3',Fdata(:,8)); % CSAT Uz [m/s]
-        fluxW.CSAT_WQA2 = DataQA (DespikeW.CSAT_WQA2, NFavg);
-        [DespikeW.CSAT_Tmp2, DespikeW.CSAT_TmpQA2] = DeSpike(Fdata(:,7),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'CSAT3',Fdata(:,8)); % CSAT Ts [Deg C]
-        fluxW.CSAT_TmpQA2 = DataQA (DespikeW.CSAT_TmpQA2, NFavg);
+        [DespikeW.CSAT_U, DespikeW.CSAT_UQA]= DeSpike(Fdata(:, 3),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3B',Fdata(:,7)); % CSAT Ux [m/s]
+        fluxW.CSAT_UQA = DataQA (DespikeW.CSAT_UQA, NFavg);
+        [DespikeW.CSAT_V, DespikeW.CSAT_VQA] = DeSpike(Fdata(:,4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3B',Fdata(:,7)); % CSAT Uy [m/s]
+        fluxW.CSAT_VQA = DataQA (DespikeW.CSAT_VQA, NFavg);
+        [DespikeW.CSAT_W, DespikeW.CSAT_WQA] = DeSpike(Fdata(:,5),2400,Dspk.HWSTD,Dspk.HWmn,Dspk.HWmx,Dspk.HWtpr,'CSAT3B',Fdata(:,7)); % CSAT Uz [m/s]
+        fluxW.CSAT_WQA = DataQA (DespikeW.CSAT_WQA, NFavg);
+        [DespikeW.CSAT_Tmp, DespikeW.CSAT_TmpQA] = DeSpike(Fdata(:,6),3600,Dspk.TSTD,Dspk.Tmn,Dspk.Tmx, Dspk.Ttpr,'CSAT3B',Fdata(:,7)); % CSAT Ts [Deg C]
+        fluxW.CSAT_TmpQA = DataQA (DespikeW.CSAT_TmpQA, NFavg);
         
         RSSIper=30; %RSSI cutoff (changed from 20)
         
@@ -226,26 +224,26 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         % Diagnostic value (for interpetation use errorcodeLI7500.m).
         % (CRB command is: CS7500 (LI7500_CO2,1,7,6) )
 	
-        [DespikeW.LI7500_C2, DespikeW.LI7500_CQA2] = DeSpike (Fdata(:,9)/44,3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500',Fdata(:,12));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
-        DespikeW.LI7500_C2=nanWinSlaughterer(DespikeW.LI7500_C2,min_nans,window,num_wins,nan_STDcutoff);
-        fluxW.LI7500_CQA2 = DataQA (DespikeW.LI7500_CQA2, NFavg);
-        [DespikeW.LI7500_Q2, DespikeW.LI7500_QQA2] = DeSpike (Fdata(:,10)*1000/18,3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500',Fdata(:,12));    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h20signal or CO2 signal
-        DespikeW.LI7500_Q2=nanWinSlaughterer(DespikeW.LI7500_Q2,min_nans,window,num_wins,nan_STDcutoff);
-        fluxW.LI7500_QQA2 = DataQA (DespikeW.LI7500_QQA2, NFavg);
-        [DespikeW.LI7500_P2, DespikeW.LI7500_PQA2] = DeSpike(Fdata(:,11),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500',Fdata(:,12));     % LI7500 Pressure [ Pa ]
-        fluxW.LI7500_PQA2 = DataQA (DespikeW.LI7500_PQA2, NFavg);
-        DespikeW.LI7500_P2=1000*DespikeW.LI7500_P2;
+        [DespikeW.LI7500_C, DespikeW.LI7500_CQA] = DeSpike (Fdata(:,8),3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500A',Fdata(:,11));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
+        DespikeW.LI7500_C=nanWinSlaughterer(DespikeW.LI7500_C,min_nans,window,num_wins,nan_STDcutoff);
+        fluxW.LI7500_CQA = DataQA (DespikeW.LI7500_CQA, NFavg);
+        [DespikeW.LI7500_Q, DespikeW.LI7500_QQA] = DeSpike (Fdata(:,9),3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500A',Fdata(:,11));    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h2o signal or CO2 signal
+        DespikeW.LI7500_Q=nanWinSlaughterer(DespikeW.LI7500_Q,min_nans,window,num_wins,nan_STDcutoff);
+        fluxW.LI7500_QQA = DataQA (DespikeW.LI7500_QQA, NFavg);
+        [DespikeW.LI7500_P, DespikeW.LI7500_PQA] = DeSpike(Fdata(:,10),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500A',Fdata(:,11));     % LI7500 Pressure [ Pa ]
+        fluxW.LI7500_PQA = DataQA (DespikeW.LI7500_PQA, NFavg);
+        DespikeW.LI7500_P=1000*DespikeW.LI7500_P;
 
         
         % LI7700 Signal Strength [ max 70 min 0, the higher the better ]
         
         %Z_old = -5.02946; Z_new = -14.2544;
         %S_old = 1.97176e-06; S_new = 0.000106478;
-        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,13),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,15),Fdata(:,12),RSSIper);      % LI7700 CH4 [mmol/m^3] 
-        
+
+        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,13),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,12),Fdata(:,15),RSSIper);      % LI7700 CH4 [mmol/m^3] { Fdata(:,18) = LI7700 Diag}
         DespikeW.LI7700_M=nanWinSlaughterer(DespikeW.LI7700_M,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7700_MQA = DataQA (DespikeW.LI7700_MQA, NFavg);
-        [DespikeW.LI7700_P, DespikeW.LI7700_PQA] = DeSpike(Fdata(:,14),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7700',Fdata(:,12));     % LI7700 Pressure [Pa] 
+        [DespikeW.LI7700_P, DespikeW.LI7700_PQA] = DeSpike(Fdata(:,14),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7700',Fdata(:,12));     % LI7700 Pressure [Pa] { Fdata(:,18) = LI7700 Diag}
         fluxW.LI7700_PQA = DataQA (DespikeW.LI7700_PQA, NFavg);
         DespikeW.LI7700_P=1000*DespikeW.LI7700_P;
         %Forces methane to nan when P is nan. P will normally only be nan if mirror is spinning
@@ -259,7 +257,6 @@ for CD = 2:length(DOY_range) %changing 2 to 1
     clear Fdata Header tmpTEMPRMY
     
     for CW = 1:nw   % CW = Current Window ; nw = Number Of Windows per file
-        
         fluxW=ORW_fluxW_process(fluxW,CW,NFavg,ntsf,DespikeW,...
             MagneticCorrection, CSAT_angle,...
             LI7500,Sdist_LI7500init,LI7700,Sdist_LI7700init,...

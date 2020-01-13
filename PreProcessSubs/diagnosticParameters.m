@@ -1,12 +1,13 @@
 function instrumentDiagnostic = diagnosticParameters(instrument , diagnostic ,LI7700RSSI, RSSIper)
-
+    % 1 = good
+    % 0 = bad
 
     if strcmp('NONE', instrument) 
         instrumentDiagnostic = ones(size(diagnostic));
-
     elseif strcmp('CSAT3', instrument)
         instrumentDiagnostic = ((diagnostic>=0 & diagnostic<=63) | (diagnostic>=4032 & diagnostic<=4095)); %logical variable =1 when diagnostic within good bounds, =0 otherwise
-
+    elseif strcmp('CSAT3B',instrument)
+        instrumentDiagnostic = diagnostic<=64; %VERONICA FOLLOW UP ON THIS
     elseif strcmp('RMYOUNG', instrument)
         instrumentDiagnostic = (diagnostic==0); %logical variable =1 when diagnostic within good bounds, =0 otherwise
 
@@ -15,7 +16,8 @@ function instrumentDiagnostic = diagnosticParameters(instrument , diagnostic ,LI
         D=dec2bin(diagnostic,8);
         Working=( (sum((D(:,1:4)=='0'),2)==0) & (bin2dec(num2str(D(:,5:8))) < 14) );
         instrumentDiagnostic = (Working==1); %logical variable =1 when diagnostic within good bounds, =0 otherwise
-
+    elseif strcmp('LI7500A',instrument) %<--is ours actually a LI7500 or an LI7500A?
+        instrumentDiagnostic=diagnostic>250; %VERONICA PLEAE CHECK
     elseif strcmp('LI7700', instrument)
         diagnostic( diagnostic>(2^16-1) | diagnostic<0 | isnan(diagnostic) ,1) = 2^16-1;
         D=dec2bin(diagnostic,16);
