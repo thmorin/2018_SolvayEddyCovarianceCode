@@ -39,5 +39,5 @@ sec=round(D(:,1)+D(:,2)/10^9,1);
 T_Stamp=datenum(1990,1,1,0,0,0)+datenum(zip,zip,zip,zip,zip,sec);
 [year,month,day,hour,minut,secon]=datevec(T_Stamp);
 secon=round(secon,1);
-data=[T_Stamp D(:,3) C(:,4:end)];
+data=[T_Stamp D(:,3) C(:,4:12) D(:,13) C(:,14:17) D(:,18:end)];
 end
