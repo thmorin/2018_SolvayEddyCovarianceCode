@@ -173,7 +173,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
      
      Fdata = ts_filt;
     %%
-    [DespikeW,~,fluxW,~,~,~,~,~,~,~,~,~,~,~,~,~,Header]=ORWPrealocatingVariables(nw,ntsf,NFavg,nfcol);
+    [DespikeW,fluxW,~,~,~,~,~,~,~,Header]=SOLPrealocatingVariables(nw,ntsf,NFavg,nfcol);
     currentday = DOY_range(CD);
     currentday = datetime(currentday, 'ConvertFrom','datenum');
     currentday = day(currentday,'dayofyear');
@@ -252,7 +252,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
     
         save([savedir 'DespikeW/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DespikeW.mat'],'DespikeW');
         save([savedir 'FastData/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_FastData.mat'],'Fdata');
-        save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DataHeader.mat'],'Header');
+%         save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DataHeader.mat'],'Header');
     
     clear Fdata Header tmpTEMPRMY
     

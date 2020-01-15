@@ -2,6 +2,8 @@ function [u ,v, w ,alfa, theta,Az,Ze,R ] = RotateWind3D(U, V, W, Sonic, cont)
 
           if strcmp(Sonic,'CSAT')
               V=-V;
+          elseif strcmp(Sonic,'CSAT3B')
+              V=-V;    
           elseif strcmp(Sonic,'RMY')
               X=U;
               U=V;
