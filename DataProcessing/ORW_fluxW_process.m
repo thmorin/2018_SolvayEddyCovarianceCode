@@ -18,13 +18,12 @@ LI7500path=0.125;                %m spectrual correction
 LI7500dia=0.015;                 %m
 LI7700path=0.475;                %m
 LI7700dia=0.075;                 %m
-% EC150path=0.144;                 %m
-% EC150dia=0.015;                  %m
+
 
 
 tmpTEMPRMY = nan(ntsf,1);
 SQAmat=zeros(nw,6);
-% SQAmat(:,[1 6])=NSavg;
+
 % Wind measurments
 fluxWind.ubar = nan(nw,1);
 fluxWind.wbar = nan(nw,1);
@@ -53,7 +52,7 @@ mWPL  = nan(NFavg,1);               % Lower sonic & LI7700 Mean CH4 flux, after 
 %% Reading data from sonics
 if isempty(varargin)
     upper_son='RMY';
-    lower_son='CSAT';
+    lower_son='CSAT3B';
 elseif max(size(varargin))==1
     disp('only one sonic input')
     return
@@ -102,7 +101,7 @@ pct_good=length(Good_Data_T_W) > 0.5 * NFavg;
 fprintf('Wind rejection based on %d\n',length(Good_Data_T_W));
 if length(Good_Data_T_W) > 0.5 * NFavg   % NFavd = Number of fast values that are meaned into one value per window
     [fluxWind, ~, ~, w_1, alfa, theta] = ...
-        WindData( DespikeW.CSAT_U(CFV), DespikeW.CSAT_V(CFV), DespikeW.CSAT_W(CFV),'CSAT', MagneticCorrection, CSAT_angle);
+        WindData( DespikeW.CSAT_U(CFV), DespikeW.CSAT_V(CFV), DespikeW.CSAT_W(CFV),'CSAT3B', MagneticCorrection, CSAT_angle);
 
     % Wind measurments for Lower Sonic
     fluxW.ubar_1(CW) = fluxWind.ubar;      % Lower Sonic Mean U
@@ -245,7 +244,9 @@ fluxW.CSAT_gust3(CW) = max(moving(CSATubar,10));
 % end
 
 %%% Vapor Pressure - Mean of LI7500 Vapor Pressure [Pa]
+
 if sum( ~isnan( DespikeW.LI7500_Q( CFV )))>0.5 * NFavg
+    fluxW.tair (CW) =nanmean(DespikeW.CSAT_Tmp(CFV));
     fluxW.e( CW )= nanmean(DespikeW.LI7500_Q(CFV)) * 0.01802.* (fluxW.tair(CW)+273.15)/ 0.21667 /10;
 end
 
@@ -328,15 +329,15 @@ else
     [Tr_1] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q(CFV), DespikeW.CSAT_Tmp(CFV), LI7500);  % CSAT & LI7500
     Tson_1 = DespikeW.CSAT_Tmp(CFV);
 end
-[Tr_2] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q(CFV), DespikeW.RMY_Tmp(CFV), LI7500);  % RMY & LI7500
-Tson_2 = DespikeW.RMY_Tmp(CFV);
+% [Tr_2] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q(CFV), DespikeW.RMY_Tmp(CFV), LI7500);  % RMY & LI7500
+% Tson_2 = DespikeW.RMY_Tmp(CFV);
 
-fluxW.tair(CW)=nanmean(Tr_1);
+% fluxW.tair(CW)=nanmean(Tr_1);
 
-if isfield(DespikeW,'CSAT_Tmp3')
-    [Tr_3] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q3(CFV), DespikeW.CSAT_Tmp3(CFV), EC150);  % CSAT & LI7500
-    Tson_3 = DespikeW.CSAT_Tmp3(CFV);
-end
+% if isfield(DespikeW,'CSAT_Tmp3')
+%     [Tr_3] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q3(CFV), DespikeW.CSAT_Tmp3(CFV), EC150);  % CSAT & LI7500
+%     Tson_3 = DespikeW.CSAT_Tmp3(CFV);
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % If no wind data from lower sonic and there is an upper sonic, use upper

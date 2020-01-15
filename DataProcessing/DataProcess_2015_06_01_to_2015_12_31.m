@@ -52,7 +52,7 @@ addpath(genpath(codedirectory));
 %DS2 installed 9 24, previous start date is 08 21
 
 %DOY_range=Date2DOY( 06 , 26 , 2019 ):Date2DOY( 10 , 24 , 2019 ); %dates range for when we camptured data, when the col # changed
-DOY_range=datenum(2019,11,05):datenum(0,0,1):datenum(2019,12,24);
+DOY_range=datenum(2019,09,30):datenum(0,0,1):datenum(2019,10,3);
 fastfile = 'thmremote_ts_data_';
 
 site = 'SLVY';                                                             % Solvay
@@ -173,7 +173,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
      
      Fdata = ts_filt;
     %%
-    [DespikeW,~,fluxW,~,~,~,~,~,~,~,~,~,~,~,~,~,Header]=ORWPrealocatingVariables(nw,ntsf,NFavg,nfcol);
+    [DespikeW,fluxW,~,~,~,~,~,~,~,Header]=SOLPrealocatingVariables(nw,ntsf,NFavg,nfcol);
     currentday = DOY_range(CD);
     currentday = datetime(currentday, 'ConvertFrom','datenum');
     currentday = day(currentday,'dayofyear');
@@ -207,8 +207,8 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Adjust column numbers from data including column numbers of diagnostics
-        DespikeW.Time = Fdata(:,1); %changed from (:,1:3) TQUEST: what is this? 
-        
+        DespikeW.Time = Fdata(:,1); 
+        %Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,12),Fdata(:,15),RSSIper);
         [DespikeW.CSAT_U, DespikeW.CSAT_UQA]= DeSpike(Fdata(:, 3),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3B',Fdata(:,7)); % CSAT Ux [m/s]
         fluxW.CSAT_UQA = DataQA (DespikeW.CSAT_UQA, NFavg);
         [DespikeW.CSAT_V, DespikeW.CSAT_VQA] = DeSpike(Fdata(:,4),2400,Dspk.VWSTD,Dspk.VWmn,Dspk.VWmx,Dspk.VWtpr,'CSAT3B',Fdata(:,7)); % CSAT Uy [m/s]
@@ -224,13 +224,13 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         % Diagnostic value (for interpetation use errorcodeLI7500.m).
         % (CRB command is: CS7500 (LI7500_CO2,1,7,6) )
 	
-        [DespikeW.LI7500_C, DespikeW.LI7500_CQA] = DeSpike (Fdata(:,8),3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500A',Fdata(:,11));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
+        [DespikeW.LI7500_C, DespikeW.LI7500_CQA] = DeSpike (Fdata(:,8),3600,Dspk.CSTD,Dspk.Cmn,Dspk.Cmx,Dspk.Ctpr,'LI7500RS',Fdata(:,11));      % LI7500 CO2 [mmol/m^3] { Fdata(:,17) = LI7500 Diag}
         DespikeW.LI7500_C=nanWinSlaughterer(DespikeW.LI7500_C,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7500_CQA = DataQA (DespikeW.LI7500_CQA, NFavg);
-        [DespikeW.LI7500_Q, DespikeW.LI7500_QQA] = DeSpike (Fdata(:,9),3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500A',Fdata(:,11));    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h2o signal or CO2 signal
+        [DespikeW.LI7500_Q, DespikeW.LI7500_QQA] = DeSpike (Fdata(:,9),3600,Dspk.QSTD,Dspk.Qmn,Dspk.Qmx,Dspk.Qtpr,'LI7500RS',Fdata(:,11));    % LI7500 H2O [mmol/m^3] TQUEST: we do not have h2o signal or CO2 signal
         DespikeW.LI7500_Q=nanWinSlaughterer(DespikeW.LI7500_Q,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7500_QQA = DataQA (DespikeW.LI7500_QQA, NFavg);
-        [DespikeW.LI7500_P, DespikeW.LI7500_PQA] = DeSpike(Fdata(:,10),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500A',Fdata(:,11));     % LI7500 Pressure [ Pa ]
+        [DespikeW.LI7500_P, DespikeW.LI7500_PQA] = DeSpike(Fdata(:,10),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7500RS',Fdata(:,11));     % LI7500 Pressure [ Pa ]
         fluxW.LI7500_PQA = DataQA (DespikeW.LI7500_PQA, NFavg);
         DespikeW.LI7500_P=1000*DespikeW.LI7500_P;
 
@@ -240,7 +240,8 @@ for CD = 2:length(DOY_range) %changing 2 to 1
         %Z_old = -5.02946; Z_new = -14.2544;
         %S_old = 1.97176e-06; S_new = 0.000106478;
 
-        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,13),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,12),Fdata(:,15),RSSIper);      % LI7700 CH4 [mmol/m^3] { Fdata(:,18) = LI7700 Diag}
+        [DespikeW.LI7700_M, DespikeW.LI7700_MQA] = DeSpike (Fdata(:,13),6000,Dspk.MSTD,Dspk.Mmn,Dspk.Mmx,Dspk.Mtpr,'LI7700',Fdata(:,12),Fdata(:,15),RSSIper);      % LI7700 CH4 [mmol/m^3]
+        
         DespikeW.LI7700_M=nanWinSlaughterer(DespikeW.LI7700_M,min_nans,window,num_wins,nan_STDcutoff);
         fluxW.LI7700_MQA = DataQA (DespikeW.LI7700_MQA, NFavg);
         [DespikeW.LI7700_P, DespikeW.LI7700_PQA] = DeSpike(Fdata(:,14),2400,Dspk.PSTD,Dspk.Pmn,Dspk.Pmx,Dspk.Ptpr,'LI7700',Fdata(:,12));     % LI7700 Pressure [Pa] { Fdata(:,18) = LI7700 Diag}
@@ -252,7 +253,7 @@ for CD = 2:length(DOY_range) %changing 2 to 1
     
         save([savedir 'DespikeW/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DespikeW.mat'],'DespikeW');
         save([savedir 'FastData/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_FastData.mat'],'Fdata');
-        save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DataHeader.mat'],'Header');
+%         save([savedir 'DataHeader/' site '_' num2str(year) '_' num2str(currentday,'%03.0f') '_2_DataHeader.mat'],'Header');
     
     clear Fdata Header tmpTEMPRMY
     
