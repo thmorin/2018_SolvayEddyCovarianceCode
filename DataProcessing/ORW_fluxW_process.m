@@ -243,13 +243,6 @@ fluxW.CSAT_gust3(CW) = max(moving(CSATubar,10));
 %     end
 % end
 
-%%% Vapor Pressure - Mean of LI7500 Vapor Pressure [Pa]
-
-if sum( ~isnan( DespikeW.LI7500_Q( CFV )))>0.5 * NFavg
-    fluxW.tair (CW) =nanmean(DespikeW.CSAT_Tmp(CFV));
-    fluxW.e( CW )= nanmean(DespikeW.LI7500_Q(CFV)) * 0.01802.* (fluxW.tair(CW)+273.15)/ 0.21667 /10;
-end
-
 %%% Saturated Vapor Pressure - Mean of Saturation Vapor Pressure [Pa]
 % fluxW.p_vaporSat_bar( CW ) = nanmean(W1min.Pvaporsat(CSV));
 % if isnan(fluxW.p_vaporSat_bar( CW )) % Retries with a possibly updated temperature value [Pa]
@@ -332,7 +325,13 @@ end
 % [Tr_2] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q(CFV), DespikeW.RMY_Tmp(CFV), LI7500);  % RMY & LI7500
 % Tson_2 = DespikeW.RMY_Tmp(CFV);
 
-% fluxW.tair(CW)=nanmean(Tr_1);
+fluxW.tair(CW)=nanmean(Tr_1);
+
+%%% Vapor Pressure - Mean of LI7500 Vapor Pressure [Pa]
+if sum( ~isnan( DespikeW.LI7500_Q( CFV )))>0.5 * NFavg
+ %   fluxW.tair (CW) =nanmean(DespikeW.CSAT_Tmp(CFV));
+    fluxW.e( CW )= nanmean(DespikeW.LI7500_Q(CFV)) * 0.01802.* (fluxW.tair(CW)+273.15)/ 0.21667 /10;
+end
 
 % if isfield(DespikeW,'CSAT_Tmp3')
 %     [Tr_3] = KaimalGaynor1990_10Hz( pressureUse, DespikeW.LI7500_Q3(CFV), DespikeW.CSAT_Tmp3(CFV), EC150);  % CSAT & LI7500
@@ -342,15 +341,15 @@ end
 
 % If no wind data from lower sonic and there is an upper sonic, use upper
 % sonic for wind data
-if ~isnan( fluxW.ustar_1(CW) )
-    fluxW.ustar(CW) = fluxW.ustar_1(CW);
-    w = w_1;
-    Tr = Tr_1;
-    Tson = Tson_1;
-    Tson_mean = fluxW.Sonic_Tmp_1(CW);
-    ubar = fluxW.ubar_1(CW);
-    Sdist_LI7500 = Sdist_LI7500init;
-    Sdist_LI7700 = Sdist_LI7700init;
+% if ~isnan( fluxW.ustar_1(CW) )
+fluxW.ustar(CW) = fluxW.ustar_1(CW);
+w = w_1;
+Tr = Tr_1;
+Tson = Tson_1;
+Tson_mean = fluxW.Sonic_Tmp_1(CW);
+ubar = fluxW.ubar_1(CW);
+Sdist_LI7500 = Sdist_LI7500init;
+Sdist_LI7700 = Sdist_LI7700init;
 % elseif strcmp(upper_son,'RMY') 
 %     fluxW.ustar(CW) = fluxW.ustar_2(CW);
 %     w = w_2;
@@ -369,15 +368,15 @@ if ~isnan( fluxW.ustar_1(CW) )
 %     ubar = fluxW.ubar_3(CW);
 % %     Sdist_LI7500 = Sdist_LI7500init+3;
 %     Sdist_LI7700 = Sdist_LI7700init+3;
-else
-    Tr = nan(NFavg,1);
-    w = nan(NFavg,1);
-    Sdist_LI7500 = Sdist_LI7500init;
-    Sdist_LI7700 = Sdist_LI7700init;
-    ubar = nan;
-    Tson = nan(NFavg,1);
-    Tson_mean = nan;
-end
+% else
+%     Tr = nan(NFavg,1);
+%     w = nan(NFavg,1);
+%     Sdist_LI7500 = Sdist_LI7500init;
+%     Sdist_LI7700 = Sdist_LI7700init;
+%     ubar = nan;
+%     Tson = nan(NFavg,1);
+%     Tson_mean = nan;
+% end
 
 % fluxW.Tr3(CW)  = nanmoment( Tr, 3 );    % Sonic & LI7500 Real Temperature moment
 % fluxW.Tr_bar(CW) = nanmean( Tr ) ;      % Sonic & LI7500 Real Temperature
@@ -650,5 +649,6 @@ if length( Good_Data_CH4 ) > 0.5 * NFavg
 else
     % sprintf ('Not enough good CH4 data in window number %d ', CW )
 end % if Good_Data_CH4
-
+fluxW.time_start(CW)=
+fluxW.time_end(CW)=
 end

@@ -11,7 +11,7 @@
 %Input season to run as array values. Input one season. If multiple seasons
 %are required, please run Matlab instances in parallel as this will greatly
 %improve run times.
-Season=8;
+Season=1;
 
 disp(['RUNNING: Post processing for season: ' num2str(Season)]);
 %Iterations to run on neural network
@@ -65,7 +65,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%BEGIN PROCESSING%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 addpath(genpath(codedirectory));
 
-if mod(Season,2)==0
+if mod(Season,1)==0
     SeasonStatus='Summer';
 else
     SeasonStatus='Winter';
@@ -83,6 +83,7 @@ if strcmp(SeasonStatus,'Winter')
 end
 
 %Implemented for ORWRP. Will be ignored if z1 and z2 are input
+z1=??;
 if exist('z1','var')~=1 && exist('z2','var')~=1
     if Season==4 && Season<7 %Summer heights - no DS2
       z1=15;
@@ -163,25 +164,13 @@ Fc_true=nansum([Fc dCdt],2);Fc_true(isnan(Fc))=nan;
 
 %%
 %Roughness length
-if exist('z2','var')==1
-    [d,z0,n]=RoughnessLength(z2,CanopyHeight,L(GoodData),ustar_2(GoodData),wind_speed_2(GoodData),daynight(GoodData));
-else
-    d=nan;
-end
-if isnan(d) || d<0.5*CanopyHeight
-    disp('Attempting rougness length calculation with data from lower anemometer')
-    [d,z0,n]=RoughnessLength(z1,CanopyHeight,L(GoodData),ustar_1(GoodData),wind_speed_1(GoodData),daynight(GoodData));
-end
-if isnan(d) || d<0.5*CanopyHeight  % || Season==6
-    disp('Attempting rougness length calculation with combination of both anemometers data')
-    ustar_full=ustar_2;ustar_full(isnan(ustar_full))=ustar_1(isnan(ustar_full));
-    wind_speed_full=wind_speed_2;wind_speed_full(isnan(wind_speed_full))=wind_speed_1(isnan(wind_speed_full));
-    [d,z0,n]=RoughnessLength(z2,CanopyHeight,L(GoodData),ustar_full(GoodData),wind_speed_1(GoodData),daynight(GoodData));
-end
+
+disp('Attempting rougness length calculation with data from lower anemometer')
+[d,z0,n]=RoughnessLength(z1,CanopyHeight,L(GoodData),ustar_1(GoodData),wind_speed_1(GoodData),daynight(GoodData));
 if isnan(d) || d<0.5*CanopyHeight
     disp('Defaulting to d=7 m and z0=2 m')
-    d=7;
-    z0=2;
+    d=7; %displacement height (CHANGE VERO) 2/3
+    z0=.1; %roughness lenght
 end
 %%
 %u* filter
